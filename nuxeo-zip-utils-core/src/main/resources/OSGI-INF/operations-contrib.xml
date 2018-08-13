@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<component name="nuxeo.zip.utils.operations" version="1.0">
+
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="nuxeo.zip.utils.operations.CheckIsZip"/>
+    <operation class="nuxeo.zip.utils.operations.EntriesList"/>
+    <operation class="nuxeo.zip.utils.operations.EntryInfo"/>
+    <operation class="nuxeo.zip.utils.operations.GetFile"/>
+    <operation class="nuxeo.zip.utils.operations.ZipInfo"/>
+    <operation class="nuxeo.zip.utils.operations.UnzipToDocumentsOp"/>
+    <operation class="nuxeo.zip.utils.operations.ZipFolderishOp"/>
+  </extension>
+
+</component>
