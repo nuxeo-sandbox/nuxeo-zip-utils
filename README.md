@@ -1,62 +1,93 @@
 # nuxeo-zip-utils
-====
 
-## WORK IN PROGRESS
+This plugin brings utilities around zip files stored in a Document, and also can zip the content of a Folderish Document.
 
-In short. Operations to handle zip files, to unzip to docuent,s to zip a folderish.
 
-Briefly, the operations are:
+## Operations
 
-* `ZipUtils.IsZip`
-  * Input is `Document` or `Blob`
-  * Parameter: `xpath` ("file:content" by default)
-  * Return the input unchanged
-  * Set the `ZipUtils.IsZip` Context Variable to `true` or `false`
 
-* `ZipUtils.EntriesList`
-  * Input is `Document` or `Blob`
-  * Parameter: `xpath` ("file:content" by default)
-  * Return the input unchanged
-  * Set the `zipInfo_entriesList` String Context Variable to the full list of all entries (one/line)
+### Files > `ZipUtils.IsZip`
+* Input is `Document` or `Blob`
+* Parameter: `xpath` ("file:content" by default)
+* Return the input unchanged
+* Set the `zipInfo_isZip` Context Variable to `true` or `false`
 
-* `ZipUtils.EntryInfo`
-  * Input is `Document` or `Blob`
-  * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
-  * Return the input unchanged
-  * Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method (0 = stored, 8 =  compressed)
+JS Example:
 
-* `ZipUtils.GetFile`
-  * Input is `Document` or `Blob`
-  * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
-  * Returns the corresponding file. Return null if the entry does not exist or is a folder
+```
+// In this example, input is a Document. The operation
+// tests if file:content is a zip file
+function run(input, params) {
+  . . .
+  ZipUtils.IsZip(input, {});
+  // Valuer is returned as a boolean in the "zipInfo_isZip" Context variable:
+  if(ctx.zipInfo_isZip) {
+    . . .
+  }
+  . . .
+}
+```
 
-* `ZipUtils.UnzipToDocumentsOp`
-  * Input is `Document` or `Blob`
-  * Unzips the blob and creates the same structure in the target (the parent container when input is a Document and target is not provided).
-  * Returns the created folderish
-  * Parameters:
-    * `xpath` (optional)
-    * `target` (required if input is a blob): The parent document where to unzip
-    * `folderishType` (optional): Type to use when creating a Folderish (default is Folder)
-    * `commitModulo` (optional): Save and commit transaction regularly (strongly recommended to avoid transaction timeout when you know the zip contains a lot of files). Default is 100
-    * `mainFolderishType` (optional): Type of the main container created to expand the zip (default is Folder)
-    * `mainFolderishName` (optional): The name for this main container
+### Files > `ZipUtils.EntriesList`
+* Input is `Document` or `Blob`
+* Parameter: `xpath` ("file:content" by default)
+* Return the input unchanged
+* Set the `zipInfo_entriesList` String Context Variable to the full list of all entries (one/line)
 
-* `ZipUtils.ZipFolderishOp`
-    * Input is a Folderish document
-    * Zip all the content recursively, with the hierarchy. Ignore non-folderish documents that have no blobs
-    * Returns the Zipped content
-    * Parameters:
-      * `callbackChain` (optional): Byt default, the blob is read in "file:content". Use a callback chain to tune this behavior. Your chain _must_  receive `Document` as input and must output a Blob (even if null)
-      * `whereClauseOverride`: To find the children of folderish documents, the operation exludes by default the children that are HiddenInNavigation, version, proxy, or in the trash. You can add your own filter. WARNING: do not start it with "AND", the code prefixes it for you.
-      * `doNotCreateMainFolder` (optionl): When `true` the zip archive TOC will not start with the name of the main folder.
 
-* `ZipUtils.ZipInfo`
-  * Input is `Document` or `Blob`
-  * Returns the input unchanged
-  * Parameter: `xpath` ("file:content" by default)
-  * Return info about the zip in Context Variables: `zipInfo_comment`, `zipInfo_countFiles` (int), `zipInfo_countDirectories` (int)
+### Files > `ZipUtils.EntryInfo`
+* Input is `Document` or `Blob`
+* Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
+* Return the input unchanged
+* Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method (0 = stored, 8 =  compressed)
 
+
+### Files > `ZipUtils.GetFile`
+* Input is `Document` or `Blob`
+* Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
+* Returns the corresponding file. Return null if the entry does not exist or is a folder
+
+
+### Files > `ZipUtils.UnzipToDocumentsOp`
+* Input is `Document` or `Blob`
+* Unzips the blob and creates the same structure in the target (the parent container when input is a Document and target is not provided).
+* Returns the created folderish
+* Parameters:
+  * `xpath` (optional)
+  * `target` (required if input is a blob): The parent document where to unzip
+  * `folderishType` (optional): Type to use when creating a Folderish (default is Folder)
+  * `commitModulo` (optional): Save and commit transaction regularly (strongly recommended to avoid transaction timeout when you know the zip contains a lot of files). Default is 100
+  * `mainFolderishType` (optional): Type of the main container created to expand the zip (default is Folder)
+  * `mainFolderishName` (optional): The name for this main container
+
+
+### Files > `ZipUtils.ZipFolderishOp`
+* Input is a Folderish document
+* Zip all the content recursively, with the hierarchy. Ignore non-folderish documents that have no blobs
+* Returns the Zipped content
+* Parameters:
+  * `callbackChain` (optional): Byt default, the blob is read in "file:content". Use a callback chain to tune this behavior. Your chain _must_  receive `Document` as input and must output a Blob (even if null)
+  * `whereClauseOverride`: To find the children of folderish documents, the operation exludes by default the children that are HiddenInNavigation, version, proxy, or in the trash. You can define your own filter. WARNING: do not start it with "AND", the code prefixes it for you.
+    The default is `ecm:mixinType != 'HiddenInNavigation' AND ecm:isVersion = 0 AND ecm:isProxy = 0 AND ecm:isTrashed = 0`
+  * `doNotCreateMainFolder` (optionl): When `true` the zip archive TOC will not start with the name of the main folder.
+
+
+### Files > `ZipUtils.ZipInfo`
+* Input is `Document` or `Blob`
+* Returns the input unchanged
+* Parameter: `xpath`, optional ("file:content" by default)
+* Return info about the zip in Context Variables: `zipInfo_comment`, `zipInfo_countFiles` (int), `zipInfo_countDirectories` (int)
+
+
+## Build and Install
+
+Build with maven (at least 3.3)
+
+```
+cd /path/to/nuxeo-zip-utils
+mvn clean install
+# _> the package is in nuxeo-zip-utils-package/target
+```
 
 ## Support
 
