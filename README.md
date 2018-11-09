@@ -1,14 +1,14 @@
-# nuxeo-zip-utils
+# About
 
 [![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-zip-utils-master)](https://qa.nuxeo.org/jenkins/job/Sandbox/job/sandbox_nuxeo-zip-utils-master/)
 
 This plugin brings utilities around zip files stored in a Document, and also can zip the content of a Folderish Document.
 
 
-## Operations
+# Operations
 
 
-### Files > `ZipUtils.IsZip`
+## Files > `ZipUtils.IsZip`
 * Input is `Document` or `Blob`
 * Parameter: `xpath` ("file:content" by default)
 * Return the input unchanged
@@ -30,27 +30,27 @@ function run(input, params) {
 }
 ```
 
-### Files > `ZipUtils.EntriesList`
+## Files > `ZipUtils.EntriesList`
 * Input is `Document` or `Blob`
 * Parameter: `xpath` ("file:content" by default)
 * Return the input unchanged
 * Set the `zipInfo_entriesList` String Context Variable to the full list of all entries (one/line)
 
 
-### Files > `ZipUtils.EntryInfo`
+## Files > `ZipUtils.EntryInfo`
 * Input is `Document` or `Blob`
 * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
 * Return the input unchanged
 * Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method (0 = stored, 8 =  compressed)
 
 
-### Files > `ZipUtils.GetFile`
+## Files > `ZipUtils.GetFile`
 * Input is `Document` or `Blob`
 * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
 * Returns the corresponding file. Return null if the entry does not exist or is a folder
 
 
-### Files > `ZipUtils.UnzipToDocumentsOp`
+## Files > `ZipUtils.UnzipToDocumentsOp`
 * Input is `Document` or `Blob`
 * Unzips the blob and creates the same structure in the target (the parent container when input is a Document and target is not provided).
 * Returns the created folderish
@@ -63,7 +63,7 @@ function run(input, params) {
   * `mainFolderishName` (optional): The name for this main container
 
 
-### Files > `ZipUtils.ZipFolderishOp`
+## Files > `ZipUtils.ZipFolderishOp`
 * Input is a Folderish document
 * Zip all the content recursively, with the hierarchy. Ignore non-folderish documents that have no blobs
 * Returns the Zipped content
@@ -74,14 +74,14 @@ function run(input, params) {
   * `doNotCreateMainFolder` (optionl): When `true` the zip archive TOC will not start with the name of the main folder.
 
 
-### Files > `ZipUtils.ZipInfo`
+## Files > `ZipUtils.ZipInfo`
 * Input is `Document` or `Blob`
 * Returns the input unchanged
 * Parameter: `xpath`, optional ("file:content" by default)
 * Return info about the zip in Context Variables: `zipInfo_comment`, `zipInfo_countFiles` (int), `zipInfo_countDirectories` (int)
 
 
-## Build and Install
+# Build and Install
 
 Build with maven (at least 3.3)
 
@@ -91,7 +91,7 @@ mvn clean install
 # _> the package is in nuxeo-zip-utils-package/target
 ```
 
-## Support
+# Support
 
 **These features are sand-boxed and not yet part of the Nuxeo Production platform.**
 
@@ -100,12 +100,12 @@ These solutions are provided for inspiration and we encourage customers to use t
 This is a moving project (no API maintenance, no deprecation process, etc.) If any of these solutions are found to be useful for the Nuxeo Platform in general, they will be integrated directly into platform, not maintained here.
 
 
-## Licensing
+# Licensing
 
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 
-## About Nuxeo
+# About Nuxeo
 
 Nuxeo dramatically improves how content-based applications are built, managed and deployed, making customers more agile, innovative and successful. Nuxeo provides a next generation, enterprise ready platform for building traditional and cutting-edge content oriented applications. Combining a powerful application development environment with SaaS-based tools and a modular architecture, the Nuxeo Platform and Products provide clear business value to some of the most recognizable brands including Verizon, Electronic Arts, Sharp, FICO, the U.S. Navy, and Boeing. Nuxeo is headquartered in New York and Paris.
 
