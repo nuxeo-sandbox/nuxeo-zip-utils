@@ -1,5 +1,7 @@
 # nuxeo-zip-utils
 
+[![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-zip-utils-master)](https://qa.nuxeo.org/jenkins/job/Sandbox/job/sandbox_nuxeo-zip-utils-master/)
+
 This plugin brings utilities around zip files stored in a Document, and also can zip the content of a Folderish Document.
 
 
