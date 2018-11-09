@@ -3,7 +3,7 @@
   <parent>
     <groupId>nuxeo.zip.utils</groupId>
     <artifactId>nuxeo-zip-utils-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>10.2-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
