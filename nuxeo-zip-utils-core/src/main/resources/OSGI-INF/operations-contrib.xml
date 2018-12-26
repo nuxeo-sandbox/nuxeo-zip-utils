@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<component name="nuxeo.zip.utils.operations" version="1.0">
+<component name="org.nuxeo.utils.archive.operations" version="1.0">
 
   <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
     <operation class="nuxeo.zip.utils.operations.CheckIsZip"/>
@@ -11,4 +11,9 @@
     <operation class="nuxeo.zip.utils.operations.ZipFolderishOp"/>
   </extension>
 
+  <extension point="operations" target="org.nuxeo.ecm.core.operation.OperationServiceComponent">
+    <operation class="org.nuxeo.utils.archive.operations.DetectArchiveTypeOp"/>
+    <operation class="org.nuxeo.utils.archive.operations.GetArchiveEntryOp"/>
+  </extension>
+  
 </component>

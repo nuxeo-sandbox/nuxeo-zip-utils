@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.utils.archive.model" version="1.0">
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
+    <schema name="archive" prefix="archive" src="schema/archive.xsd"/>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.schema.TypeService" point="doctype">
+    <facet name="archive">
+      <schema name="archive"/>
+    </facet>
+    <doctype extends="Folder" name="Archive">
+      <schema name="file"/>
+      <facet name="archive"/>
+    </doctype>
+  </extension>
+
+</component>

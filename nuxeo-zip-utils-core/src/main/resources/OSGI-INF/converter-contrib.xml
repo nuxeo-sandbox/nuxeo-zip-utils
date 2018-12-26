@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.utils.archive.converter">
+
+  <extension target="org.nuxeo.ecm.core.convert.service.ConversionServiceImpl" point="converter">
+
+    <converter name="archive2html" class="org.nuxeo.utils.archive.converter.Archive2HtmlConverter">
+      <destinationMimeType>text/html</destinationMimeType>
+
+      <sourceMimeType>application/x-archive</sourceMimeType>
+      <sourceMimeType>application/x-arj</sourceMimeType>
+      <sourceMimeType>application/x-cpio</sourceMimeType>
+      <sourceMimeType>application/java-archive</sourceMimeType>
+      <sourceMimeType>application/x-tar</sourceMimeType>
+      <sourceMimeType>application/x-7z-compressed</sourceMimeType>
+
+      <sourceMimeType>application/brotli</sourceMimeType>
+      <sourceMimeType>application/x-bzip2</sourceMimeType>
+      <sourceMimeType>application/gzip</sourceMimeType>
+      <sourceMimeType>application/x-java-pack200</sourceMimeType>
+      <sourceMimeType>application/x-xz</sourceMimeType>
+      <sourceMimeType>application/x-lzma</sourceMimeType>
+      <sourceMimeType>application/x-snappy-framed</sourceMimeType>
+      <sourceMimeType>application/x-snappy-raw</sourceMimeType>
+      <sourceMimeType>application/x-compress</sourceMimeType>
+      <sourceMimeType>application/x-gzip</sourceMimeType>
+      <sourceMimeType>application/x-gzip-compressed</sourceMimeType>
+      <sourceMimeType>application/x-lz4</sourceMimeType>
+      <sourceMimeType>application/zstd</sourceMimeType>
+    </converter>
+
+  </extension>
+
+</component>

@@ -6,4 +6,4 @@ Bundle-Version: 1.0.0
 Bundle-Name: nuxeo-zip-utils-core
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: nuxeo.zip.utils.nuxeo-zip-utils-core;singleton=true
-Nuxeo-Component: OSGI-INF/operations-contrib.xml
+Nuxeo-Component: OSGI-INF/converter-contrib.xml, OSGI-INF/operations-contrib.xml, OSGI-INF/CoreExtensions.xml
