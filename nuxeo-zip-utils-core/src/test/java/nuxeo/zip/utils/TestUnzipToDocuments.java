@@ -56,18 +56,6 @@ public class TestUnzipToDocuments {
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f2/Picture.jpg", "Picture");
     }
 
-    // In a test we  ask to created our own main Workspace as destination for the unzipping
-    private static final HashMap<String, String> PATHS_AND_DOCTYPES_ZIP1_CUSTOM = new HashMap<String, String>();
-    static {
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST", "Workspace");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/File.pdf", "File");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/f1", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/f1/f1-f1", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/f1/f1-f1/Video.mp4", "Video");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/f2", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1_CUSTOM.put("/TEST/f2/Picture.jpg", "Picture");
-    }
-
     // valid-zip-2.zip expands inside a "nuxeo-unzip-test" folder
     public static final String VALID_ZIP_2 = "valid-zip-2.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_ZIP2 = new HashMap<String, String>();
@@ -147,7 +135,8 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    public void testWithBlobAndZip1AndCustomMainFolder() {
+    // This test validates that the developer can specify the root folderish type.
+    public void shouldUnzipToWorkpace() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
 
@@ -160,7 +149,8 @@ public class TestUnzipToDocuments {
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
-        checkUnzippedContent(PATHS_AND_DOCTYPES_ZIP1_CUSTOM);
+        assertEquals(mainUnzippedFolderDoc.getType(),"Workspace");
+        assertEquals(mainUnzippedFolderDoc.getName(),"TEST");
 
     }
 
