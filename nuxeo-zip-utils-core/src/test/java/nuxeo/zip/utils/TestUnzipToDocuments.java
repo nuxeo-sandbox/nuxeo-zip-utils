@@ -44,18 +44,16 @@ import org.nuxeo.runtime.transaction.TransactionHelper;
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestUnzipToDocuments {
 
-    public static final String VALID_ZIP = "valid-zip.zip";
-
-    // valid-zip.zip doesn not contain path to a main folder, but default UnzipToDocuments will create one, named by the
-    // zip file itself minus the extension.
-    private static final HashMap<String, String> PATHS_AND_DOCTYPES_ZIP1 = new HashMap<String, String>();
+    // This zip file has files and folders at the root.
+    public static final String FILES_AND_FOLDERS_ZIP = "files-and-folders.zip";
+    private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESANDFOLDERS = new HashMap<String, String>();
     static {
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/File.pdf", "File");
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/f1", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/f1/f1-f1", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/f1/f1-f1/Video.mp4", "Video");
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/f2", "Folder");
-        PATHS_AND_DOCTYPES_ZIP1.put("/valid-zip/f2/Picture.jpg", "Picture");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/File.pdf", "File");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f1", "Folder");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f1/f1-f1", "Folder");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f1/f1-f1/Video.mp4", "Video");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f2", "Folder");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f2/Picture.jpg", "Picture");
     }
 
     // In a test we  ask to created our own main Workspace as destination for the unzipping
@@ -132,9 +130,10 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    public void testWithBlobAndZip1() throws IOException {
+    // This test just validates that the unzip and import works; it does not check the root document name, for example.
+    public void shouldUnzipBlob() {
 
-        File f = FileUtils.getResourceFileFromContext(VALID_ZIP);
+        File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
 
         FileBlob blob = new FileBlob(f);
 
@@ -143,14 +142,14 @@ public class TestUnzipToDocuments {
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
-        checkUnzippedContent(PATHS_AND_DOCTYPES_ZIP1);
+        checkUnzippedContent(PATHS_AND_DOCTYPES_FILESANDFOLDERS);
 
     }
 
     @Test
     public void testWithBlobAndZip1AndCustomMainFolder() {
 
-        File f = FileUtils.getResourceFileFromContext(VALID_ZIP);
+        File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
 
         FileBlob blob = new FileBlob(f);
 
