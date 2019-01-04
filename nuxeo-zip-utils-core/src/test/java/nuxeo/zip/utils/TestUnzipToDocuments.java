@@ -181,5 +181,10 @@ public class TestUnzipToDocuments {
 
     }
 
-    // TODO: Test operation
+    // TODO: Test zip with no folders, only paths to files in folders
+
+    // TODO: Test zip with/without parent doc
+
+    // TODO: Test zip with no folders at all, all files at root
+    // Should therefore create a root document to store them.
 }
