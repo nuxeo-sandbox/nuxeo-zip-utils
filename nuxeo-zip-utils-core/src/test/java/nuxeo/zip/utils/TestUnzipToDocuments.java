@@ -17,7 +17,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
-import org.nuxeo.ecm.automation.AutomationService;
 import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
@@ -60,12 +59,21 @@ public class TestUnzipToDocuments {
     public static final String SINGLE_FOLDER_ZIP = "single-folder.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER = new HashMap<String, String>();
     static {
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/File.pdf", "File");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/f1", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/f1/f1-f1", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/f1/f1-f1/Video.mp4", "Video");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/f2", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/File.pdf", "File");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1/f1-f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1/f1-f1/Video.mp4", "Video");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f2", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
+    }
+    private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED = new HashMap<String, String>();
+    static {
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/File.pdf", "File");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f1/f1-f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f1/f1-f1/Video.mp4", "Video");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f2", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
     }
 
     @Inject
@@ -168,6 +176,25 @@ public class TestUnzipToDocuments {
     }
 
     @Test
+    // This test validates that, given a zip of a folder, the folder is mapped as a child of the root document.
+    public void shouldMapRootFolderToRootDoc() throws IOException {
+
+        File f = FileUtils.getResourceFileFromContext(SINGLE_FOLDER_ZIP);
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+
+        unzipToDocs.setMapRoot(false);
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
+        checkUnzippedContent(PATHS_AND_DOCTYPES_SINGLEFOLDER);
+
+    }
+
+    @Test
     // This test validates that, given a zip of a folder, the folder is mapped to the root document instead of created *as a child* of the root document.
     public void shouldMapRootFolderToRootDoc() throws IOException {
 
@@ -182,7 +209,7 @@ public class TestUnzipToDocuments {
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
-        checkUnzippedContent(PATHS_AND_DOCTYPES_SINGLEFOLDER);
+        checkUnzippedContent(PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED);
 
     }
 
