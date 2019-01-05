@@ -143,13 +143,29 @@ public class TestUnzipToDocuments {
         FileBlob blob = new FileBlob(f);
 
         UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
-        unzipToDocs.setMainFolderishName("TEST");
         unzipToDocs.setMainFolderishType("Workspace");
 
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
         assertEquals(mainUnzippedFolderDoc.getType(),"Workspace");
+
+    }
+
+    @Test
+    // This test validates that the developer can specify the root folderish name.
+    public void shouldUnzipToTEST() {
+
+        File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+        unzipToDocs.setMainFolderishName("TEST");
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
         assertEquals(mainUnzippedFolderDoc.getName(),"TEST");
 
     }
