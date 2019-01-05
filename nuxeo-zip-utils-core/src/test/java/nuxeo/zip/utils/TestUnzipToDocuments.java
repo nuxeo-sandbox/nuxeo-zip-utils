@@ -195,7 +195,7 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that, given a zip of a folder, the folder is mapped to the root document instead of created *as a child* of the root document.
+    // This test validates that, given a zip of a single folder, the folder is mapped to the root document instead of created *as a child* of the root document.
     public void shouldMapRootFolderToRootDoc() throws IOException {
 
         File f = FileUtils.getResourceFileFromContext(SINGLE_FOLDER_ZIP);
@@ -214,8 +214,21 @@ public class TestUnzipToDocuments {
     }
 
 
-    // TODO: Test zip with/without parent doc
+    @Test
+    // This test validates that, given a zip that is NOT of a single folder, you can't tell the plug-in to map the root content to the root Document.
+    public void shouldFailToMapRootFolderToRootDoc() throws IOException {
 
-    // TODO: Test zip with no folders at all, all files at root
-    // Should therefore create a root document to store them.
+        File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+
+        unzipToDocs.setMapRoot(true);
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
+    }
+
 }
