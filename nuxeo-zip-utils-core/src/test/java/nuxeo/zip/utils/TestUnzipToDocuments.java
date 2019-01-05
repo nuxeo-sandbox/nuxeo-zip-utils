@@ -47,6 +47,7 @@ public class TestUnzipToDocuments {
     public static final String FILES_AND_FOLDERS_ZIP = "files-and-folders.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESANDFOLDERS = new HashMap<String, String>();
     static {
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders", "Folder");
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/File.pdf", "File");
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f1", "Folder");
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f1/f1-f1", "Folder");
@@ -55,19 +56,40 @@ public class TestUnzipToDocuments {
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/f2/Picture.jpg", "Picture");
     }
 
+    // This zip file has no folders.
+    public static final String FILES_ONLY_ZIP = "files-only.zip";
+    private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESONLY = new HashMap<String, String>();
+    static {
+        PATHS_AND_DOCTYPES_FILESONLY.put("/files-only", "Folder");
+        PATHS_AND_DOCTYPES_FILESONLY.put("/files-only/File.pdf", "File");
+    }
+
+    // This zip file has only folders.
+    public static final String FOLDERS_ONLY_ZIP = "folders-only.zip";
+    private static final HashMap<String, String> PATHS_AND_DOCTYPES_FOLDERSONLY = new HashMap<String, String>();
+    static {
+        PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only", "Folder");
+        PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only/f1", "Folder");
+        PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only/f1/f1-f1", "Folder");
+        PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only/f2", "Folder");
+    }
+
     // This zip file has only a single folder at the root.
     public static final String SINGLE_FOLDER_ZIP = "single-folder.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER = new HashMap<String, String>();
     static {
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/File.pdf", "File");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1/f1-f1", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f1/f1-f1/Video.mp4", "Video");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f2", "Folder");
-        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/single-folder/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/File.pdf", "File");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f1/f1-f1", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f1/f1-f1/Video.mp4", "Video");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f2", "Folder");
+        PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
     }
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED = new HashMap<String, String>();
     static {
+        PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test", "Folder");
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/File.pdf", "File");
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f1", "Folder");
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f1/f1-f1", "Folder");
@@ -123,8 +145,8 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that the unzip and import works; it does not check the root document name, for example.
-    public void shouldUnzipBlob() {
+    // This test validates that the unzip and import works for a zip with files and folders.
+    public void shouldUnzipFilesAndFolders() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
 
@@ -136,6 +158,42 @@ public class TestUnzipToDocuments {
         assertNotNull(mainUnzippedFolderDoc);
 
         checkUnzippedContent(PATHS_AND_DOCTYPES_FILESANDFOLDERS);
+
+    }
+
+    @Test
+    // This test validates that the unzip and import works for a zip with files only.
+    public void shouldUnzipFilesOnly() {
+
+        File f = FileUtils.getResourceFileFromContext(FILES_ONLY_ZIP);
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
+        checkUnzippedContent(PATHS_AND_DOCTYPES_FILESONLY);
+
+    }
+
+    @Test
+    // This test validates that the unzip and import works for a zip with folders only.
+    public void shouldUnzipFoldersOnly() {
+
+        File f = FileUtils.getResourceFileFromContext(FOLDERS_ONLY_ZIP);
+
+        // TODO: Do I really want to check and make sure no other children are created? Not sure I really care...
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
+        checkUnzippedContent(PATHS_AND_DOCTYPES_FOLDERSONLY);
 
     }
 
