@@ -213,7 +213,6 @@ public class TestUnzipToDocuments {
 
     }
 
-    // TODO: Test zip with no folders, only paths to files in folders
 
     // TODO: Test zip with/without parent doc
 
