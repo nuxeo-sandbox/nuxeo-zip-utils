@@ -247,7 +247,7 @@ public class TestUnzipToDocuments {
     /**
      * This test validates that, given a zip of a folder, the folder is mapped as a child of the root document.
      */
-    public void shouldMapRootFolderToRootDoc() {
+    public void shouldMapRootFolderToChildDoc() {
 
         File f = FileUtils.getResourceFileFromContext(SINGLE_FOLDER_ZIP);
 
