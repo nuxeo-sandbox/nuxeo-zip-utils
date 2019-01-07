@@ -55,25 +55,23 @@ public class UnzipToDocuments {
 
     public static int DEFAULT_COMMIT_MODULO = 100;
 
-    protected DocumentModel parentDoc;
+    private DocumentModel parentDoc;
 
-    protected Blob zipBlob;
+    private Blob zipBlob;
 
-    protected String folderishType;
+    private String folderishType = DEFAULT_FOLDERISH_TYPE;
 
-    protected int commitModulo;
+    private int commitModulo= DEFAULT_COMMIT_MODULO;
 
-    // When the zip content does not starts with a path to a main folder used for the main extraction
-    protected String mainFolderishName = null;
+    private String mainFolderishName = null;
 
-    // When the zip content does not starts with a path to a main folder used for the main extraction
-    protected String mainFolderishType = DEFAULT_FOLDERISH_TYPE;
+    private String mainFolderishType = DEFAULT_FOLDERISH_TYPE;
+
+    private Boolean mapRoot = false;
 
     public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob) {
         this.parentDoc = parentDoc;
         this.zipBlob = zipBlob;
-        this.folderishType =  DEFAULT_FOLDERISH_TYPE;
-        this.commitModulo =  DEFAULT_COMMIT_MODULO;
     }
 
     // TODO: The assumptions below about folders are wrong. The code can be made more effecient/simpler once you understand that paths to folders are NOT required in a zip file. In fact they usually don't exist unless the folder is empty.
@@ -249,7 +247,7 @@ public class UnzipToDocuments {
     }
 
     /*
-     * Chekc if the entry should be ignored. Either because not relevant (__MACOSX, ...) or dangerous ("../")
+     * Check if the entry should be ignored. Either because not relevant (__MACOSX, ...) or dangerous ("../")
      */
     protected boolean shouldIgnoreEntry(String fileName) {
         if (fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
@@ -261,24 +259,22 @@ public class UnzipToDocuments {
     }
 
     public void setFolderishType(String folderishType) {
-        this.folderishType = folderishType;
+        this.folderishType = StringUtils.isBlank(folderishType) ? DEFAULT_FOLDERISH_TYPE : folderishType;
     }
 
     public void setCommitModulo(int commitModulo) {
-        this.commitModulo = commitModulo;
+        this.commitModulo = commitModulo <= 0 ? DEFAULT_COMMIT_MODULO : commitModulo;
     }
 
     public void setMainFolderishName(String name) {
-        mainFolderishName = name;
+        mainFolderishName = StringUtils.isBlank(name) ? null : name;
     }
 
-    /**
-     * If null or empty, <code>DEFAULT_FOLDERISH_TYPE</code> applies
-     * @param type
-     * @since TODO
-     */
     public void setMainFolderishType(String type) {
         mainFolderishType = StringUtils.isBlank(type) ? DEFAULT_FOLDERISH_TYPE : type;
     }
 
+    public void setMapRoot(Boolean mapRoot) {
+        this.mapRoot = mapRoot;
+    }
 }
