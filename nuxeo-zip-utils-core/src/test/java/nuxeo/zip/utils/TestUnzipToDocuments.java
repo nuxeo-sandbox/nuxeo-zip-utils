@@ -29,10 +29,10 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(FeaturesRunner.class)
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-@Deploy({ "org.nuxeo.ecm.platform.video.api", "org.nuxeo.ecm.platform.video.core",
-     "org.nuxeo.ecm.platform.picture.api", "org.nuxeo.ecm.platform.picture.core",
-     "org.nuxeo.ecm.platform.tag",
-    "org.nuxeo.ecm.platform.filemanager.core", "org.nuxeo.ecm.platform.types.core" })
+@Deploy({"org.nuxeo.ecm.platform.video.api", "org.nuxeo.ecm.platform.video.core",
+    "org.nuxeo.ecm.platform.picture.api", "org.nuxeo.ecm.platform.picture.core",
+    "org.nuxeo.ecm.platform.tag",
+    "org.nuxeo.ecm.platform.filemanager.core", "org.nuxeo.ecm.platform.types.core"})
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestUnzipToDocuments {
@@ -40,6 +40,7 @@ public class TestUnzipToDocuments {
     // This zip file has files and folders at the root.
     private static final String FILES_AND_FOLDERS_ZIP = "files-and-folders.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESANDFOLDERS = new HashMap<>();
+
     static {
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders", "Folder");
         PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/files-and-folders/File.pdf", "File");
@@ -53,6 +54,7 @@ public class TestUnzipToDocuments {
     // This zip file has no folders.
     private static final String FILES_ONLY_ZIP = "files-only.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESONLY = new HashMap<>();
+
     static {
         PATHS_AND_DOCTYPES_FILESONLY.put("/files-only", "Folder");
         PATHS_AND_DOCTYPES_FILESONLY.put("/files-only/File.pdf", "File");
@@ -61,6 +63,7 @@ public class TestUnzipToDocuments {
     // This zip file has only folders.
     private static final String FOLDERS_ONLY_ZIP = "folders-only.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_FOLDERSONLY = new HashMap<>();
+
     static {
         PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only", "Folder");
         PATHS_AND_DOCTYPES_FOLDERSONLY.put("/folders-only/f1", "Folder");
@@ -71,6 +74,7 @@ public class TestUnzipToDocuments {
     // This zip file has only a single folder at the root.
     private static final String SINGLE_FOLDER_ZIP = "single-folder.zip";
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER = new HashMap<>();
+
     static {
         PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder", "Folder");
         PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test", "Folder");
@@ -81,7 +85,9 @@ public class TestUnzipToDocuments {
         PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f2", "Folder");
         PATHS_AND_DOCTYPES_SINGLEFOLDER.put("/single-folder/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
     }
+
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED = new HashMap<>();
+
     static {
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test", "Folder");
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/File.pdf", "File");
@@ -139,7 +145,9 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that the unzip and import works for a zip with files and folders.
+    /**
+     * This test validates that the unzip and import works for a zip with files and folders.
+     */
     public void shouldUnzipFilesAndFolders() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
@@ -156,7 +164,9 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that the unzip and import works for a zip with files only.
+    /**
+     * This test validates that the unzip and import works for a zip with files only.
+     */
     public void shouldUnzipFilesOnly() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_ONLY_ZIP);
@@ -173,7 +183,9 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that the unzip and import works for a zip with folders only.
+    /**
+     * This test validates that the unzip and import works for a zip with folders only.
+     */
     public void shouldUnzipFoldersOnly() {
 
         File f = FileUtils.getResourceFileFromContext(FOLDERS_ONLY_ZIP);
@@ -192,7 +204,9 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that the developer can specify the root folderish type.
+    /**
+     * This test validates that the developer can specify the root folderish type.
+     */
     public void shouldUnzipToWorkpace() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
@@ -205,12 +219,14 @@ public class TestUnzipToDocuments {
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
-        assertEquals(mainUnzippedFolderDoc.getType(),"Workspace");
+        assertEquals(mainUnzippedFolderDoc.getType(), "Workspace");
 
     }
 
     @Test
-    // This test validates that the developer can specify the root folderish name.
+    /**
+     * This test validates that the developer can specify the root folderish name.
+     */
     public void shouldUnzipToTEST() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
@@ -223,12 +239,14 @@ public class TestUnzipToDocuments {
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
 
-        assertEquals(mainUnzippedFolderDoc.getName(),"TEST");
+        assertEquals(mainUnzippedFolderDoc.getName(), "TEST");
 
     }
 
     @Test
-    // This test validates that, given a zip of a folder, the folder is mapped as a child of the root document.
+    /**
+     * This test validates that, given a zip of a folder, the folder is mapped as a child of the root document.
+     */
     public void shouldMapRootFolderToRootDoc() {
 
         File f = FileUtils.getResourceFileFromContext(SINGLE_FOLDER_ZIP);
@@ -247,7 +265,10 @@ public class TestUnzipToDocuments {
     }
 
     @Test
-    // This test validates that, given a zip of a single folder, the folder is mapped to the root document instead of created *as a child* of the root document.
+    /**
+     * This test validates that, given a zip of a single folder, the folder is mapped to the root document instead of
+     * created *as a child* of the root document.
+     */
     public void shouldMapRootFolderToRootDoc() {
 
         File f = FileUtils.getResourceFileFromContext(SINGLE_FOLDER_ZIP);
@@ -267,7 +288,10 @@ public class TestUnzipToDocuments {
 
 
     @Test
-    // This test validates that, given a zip that is NOT of a single folder, you can't tell the plug-in to map the root content to the root Document.
+    /**
+     * This test validates that, given a zip that is NOT of a single folder, you can't tell the plug-in to map the root
+     * content to the root Document.
+     */
     public void shouldFailToMapRootFolderToRootDoc() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
