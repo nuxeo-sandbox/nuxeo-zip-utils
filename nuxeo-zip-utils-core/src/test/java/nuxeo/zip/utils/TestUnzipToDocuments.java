@@ -214,7 +214,7 @@ public class TestUnzipToDocuments {
         FileBlob blob = new FileBlob(f);
 
         UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
-        unzipToDocs.setMainFolderishType("Workspace");
+        unzipToDocs.setRootFolderishType("Workspace");
 
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
@@ -234,7 +234,7 @@ public class TestUnzipToDocuments {
         FileBlob blob = new FileBlob(f);
 
         UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
-        unzipToDocs.setMainFolderishName("TEST");
+        unzipToDocs.setRootFolderishName("TEST");
 
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);

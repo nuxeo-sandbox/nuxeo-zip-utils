@@ -59,13 +59,13 @@ public class UnzipToDocuments {
 
     private Blob zipBlob;
 
-    private String folderishType = DEFAULT_FOLDERISH_TYPE;
+    private String childFolderishType = DEFAULT_FOLDERISH_TYPE;
 
     private int commitModulo= DEFAULT_COMMIT_MODULO;
 
-    private String mainFolderishName = null;
+    private String rootFolderishName = null;
 
-    private String mainFolderishType = DEFAULT_FOLDERISH_TYPE;
+    private String rootFolderishType = DEFAULT_FOLDERISH_TYPE;
 
     private Boolean mapRoot = false;
 
@@ -80,11 +80,11 @@ public class UnzipToDocuments {
      * Creates Documents, in a hierarchical way, copying the tree-structure stored in the zip file.
      * <p>
      * If the zip file contains no path for a main extraction folder, one is created using either the file name of the
-     * zip blob (minus thez extension), or the valie set using <code>setMainFolderishName</code>. The sames goes for the
+     * zip blob (minus thez extension), or the valie set using <code>setRootFolderishName</code>. The sames goes for the
      * type of container for this main container, it wikll be Folderish or the value set using
-     * <code>setMainFolderishType</code>
+     * <code>setRootFolderishType</code>
      *
-     * @return the main document (folderishType) containing the unzipped data
+     * @return the main document (childFolderishType) containing the unzipped data
      * @since 10.2
      */
     public DocumentModel run() throws NuxeoException {
@@ -141,13 +141,13 @@ public class UnzipToDocuments {
                 count += 1;
                 if (count == 1 && !entry.isDirectory()) {
                     // We need to create a folderish
-                    if (StringUtils.isNotBlank(mainFolderishName)) {
-                        directoryPrefix = mainFolderishName;
+                    if (StringUtils.isNotBlank(rootFolderishName)) {
+                        directoryPrefix = rootFolderishName;
                     } else {
                         directoryPrefix = FilenameUtils.getBaseName(zipBlob.getFilename());
                     }
                     mainUnzippedFolderDoc = session.createDocumentModel(parentDocPath, directoryPrefix,
-                            mainFolderishType);
+                        rootFolderishType);
                     mainUnzippedFolderDoc.setPropertyValue("dc:title", directoryPrefix);
                     mainUnzippedFolderDoc = session.createDocument(mainUnzippedFolderDoc);
                     mainUnzippedFolderDoc = session.saveDocument(mainUnzippedFolderDoc);
@@ -190,7 +190,7 @@ public class UnzipToDocuments {
                     File newFile = new File(outDirPath.toString() + File.separator + fileName);
                     newFile.mkdirs();
 
-                    folderishDoc = session.createDocumentModel(parentDocPath + "/" + path, dcTitle, folderishType);
+                    folderishDoc = session.createDocumentModel(parentDocPath + "/" + path, dcTitle, childFolderishType);
                     folderishDoc.setPropertyValue("dc:title", dcTitle);
                     folderishDoc = session.createDocument(folderishDoc);
                     folderishDoc = session.saveDocument(folderishDoc);
@@ -258,20 +258,20 @@ public class UnzipToDocuments {
         return false;
     }
 
-    public void setFolderishType(String folderishType) {
-        this.folderishType = StringUtils.isBlank(folderishType) ? DEFAULT_FOLDERISH_TYPE : folderishType;
+    public void setChildFolderishType(String childFolderishType) {
+        this.childFolderishType = StringUtils.isBlank(childFolderishType) ? DEFAULT_FOLDERISH_TYPE : childFolderishType;
     }
 
     public void setCommitModulo(int commitModulo) {
         this.commitModulo = commitModulo <= 0 ? DEFAULT_COMMIT_MODULO : commitModulo;
     }
 
-    public void setMainFolderishName(String name) {
-        mainFolderishName = StringUtils.isBlank(name) ? null : name;
+    public void setRootFolderishName(String name) {
+        rootFolderishName = StringUtils.isBlank(name) ? null : name;
     }
 
-    public void setMainFolderishType(String type) {
-        mainFolderishType = StringUtils.isBlank(type) ? DEFAULT_FOLDERISH_TYPE : type;
+    public void setRootFolderishType(String type) {
+        rootFolderishType = StringUtils.isBlank(type) ? DEFAULT_FOLDERISH_TYPE : type;
     }
 
     public void setMapRoot(Boolean mapRoot) {

@@ -97,10 +97,10 @@ public class UnzipToDocumentsOp {
     protected DocumentModel doUnzip(Blob zipBlob) {
 
         UnzipToDocuments unzipToDocs = new UnzipToDocuments(target, zipBlob);
-        unzipToDocs.setFolderishType(folderishType);
+        unzipToDocs.setChildFolderishType(folderishType);
         unzipToDocs.setCommitModulo(commitModulo);
-        unzipToDocs.setMainFolderishType(mainFolderishType);
-        unzipToDocs.setMainFolderishName(mainFolderishName);
+        unzipToDocs.setRootFolderishType(mainFolderishType);
+        unzipToDocs.setRootFolderishName(mainFolderishName);
         DocumentModel result = unzipToDocs.run();
 
         return result;
