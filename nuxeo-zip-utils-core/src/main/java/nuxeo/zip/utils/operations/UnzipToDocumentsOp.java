@@ -96,7 +96,9 @@ public class UnzipToDocumentsOp {
 
     protected DocumentModel doUnzip(Blob zipBlob) {
 
-        UnzipToDocuments unzipToDocs = new UnzipToDocuments(target, zipBlob, folderishType, commitModulo);
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(target, zipBlob);
+        unzipToDocs.setFolderishType(folderishType);
+        unzipToDocs.setCommitModulo(commitModulo);
         unzipToDocs.setMainFolderishType(mainFolderishType);
         unzipToDocs.setMainFolderishName(mainFolderishName);
         DocumentModel result = unzipToDocs.run();
