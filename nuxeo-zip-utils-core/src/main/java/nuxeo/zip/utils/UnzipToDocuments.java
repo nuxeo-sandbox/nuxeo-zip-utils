@@ -69,15 +69,11 @@ public class UnzipToDocuments {
     // When the zip content does not starts with a path to a main folder used for the main extraction
     protected String mainFolderishType = DEFAULT_FOLDERISH_TYPE;
 
-    public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob, String folderishType, int commitModulo) {
+    public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob) {
         this.parentDoc = parentDoc;
         this.zipBlob = zipBlob;
-        this.folderishType = StringUtils.isBlank(folderishType) ? DEFAULT_FOLDERISH_TYPE : folderishType;
-        this.commitModulo = commitModulo <= 0 ? DEFAULT_COMMIT_MODULO : commitModulo;
-    }
-
-    public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob) {
-        this(parentDoc, zipBlob, null, 0);
+        this.folderishType =  DEFAULT_FOLDERISH_TYPE;
+        this.commitModulo =  DEFAULT_COMMIT_MODULO;
     }
 
     // TODO: The assumptions below about folders are wrong. The code can be made more effecient/simpler once you understand that paths to folders are NOT required in a zip file. In fact they usually don't exist unless the folder is empty.
