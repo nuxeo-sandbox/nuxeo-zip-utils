@@ -55,6 +55,9 @@ public class UnzipToDocumentsOp {
     @Param(name = "mainFolderishName", required = false)
     protected String mainFolderishName;
 
+    @Param(name = "mapRoot", required = false)
+    protected Boolean mapRoot = false;
+
     @OperationMethod
     public DocumentModel run(DocumentModel input) {
 
@@ -101,6 +104,7 @@ public class UnzipToDocumentsOp {
         unzipToDocs.setCommitModulo(commitModulo);
         unzipToDocs.setRootFolderishType(mainFolderishType);
         unzipToDocs.setRootFolderishName(mainFolderishName);
+        unzipToDocs.setMapRoot(mapRoot);
         DocumentModel result = unzipToDocs.run();
 
         return result;
