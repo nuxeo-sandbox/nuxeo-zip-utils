@@ -19,18 +19,6 @@
  */
 package nuxeo.zip.utils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -39,7 +27,15 @@ import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.platform.filemanager.api.FileManager;
 import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * @since 10.2
@@ -58,7 +54,7 @@ public class UnzipToDocuments {
 
     private String childFolderishType = DEFAULT_FOLDERISH_TYPE;
 
-    private int commitModulo= DEFAULT_COMMIT_MODULO;
+    private int commitModulo = DEFAULT_COMMIT_MODULO;
 
     private String rootFolderishName;
 
@@ -79,15 +75,19 @@ public class UnzipToDocuments {
     /**
      * Creates Documents, in a hierarchical way, copying the tree-structure stored in the zip file.
      *
-     * <P>Sometimes a zip file is a zip of the folder. Often in these cases you want the root of the extracted files to be the root document in Nuxeo.
+     * <P>Sometimes a zip file is a zip of the folder. Often in these cases you want the root of the extracted files to
+     * be the root document in Nuxeo.
      *
-     * <P>In other cases it's likely you want the root docuemnt in Nuxeo to be separate, therefore the contents of the zip file should be imported as *children*.
+     * <P>In other cases it's likely you want the root docuemnt in Nuxeo to be separate, therefore the contents of the
+     * zip file should be imported as *children*.
      *
-     * <P>The truth is there is no way to detect the desired behavior so you need to specify it using the <code>mapRoot</code> property.
+     * <P>The truth is there is no way to detect the desired behavior so you need to specify it using the
+     * <code>mapRoot</code> property.
      *
      * <P>You can specify the document type of the root object using <code>setRootFolderishType</code>.
      *
-     * <P>You can specify the name of the root object using <code>setRootFolderishName</code>, otherwise the name of the zip file or the name of the root folder in the zip will be used (depedning on the value of <code>mapRoot</code>.
+     * <P>You can specify the name of the root object using <code>setRootFolderishName</code>, otherwise the name of the
+     * zip file or the name of the root folder in the zip will be used (depedning on the value of <code>mapRoot</code>.
      *
      * @return the main document containing the unzipped data
      * @since 10.2
@@ -111,10 +111,10 @@ public class UnzipToDocuments {
 
             DocumentModel parentForImport;
 
-            if(!mapRoot){
-                rootDocument =  session.createDocument(session.createDocumentModel(parentDoc.getPathAsString(), rootFolderishName, rootFolderishType));
+            if (!mapRoot) {
+                rootDocument = session.createDocument(session.createDocumentModel(parentDoc.getPathAsString(), rootFolderishName, rootFolderishType));
                 parentForImport = rootDocument;
-            }else{
+            } else {
                 parentForImport = parentDoc;
             }
 
@@ -132,9 +132,9 @@ public class UnzipToDocuments {
 
                 // Create folderish documents as needed and get the parent for the Blob; i.e. where the Blob will be
                 // imported.
-                parentForNewBlob = handleFolders(session,parentForImport, entryPath, isDirectory);
+                parentForNewBlob = handleFolders(session, parentForImport, entryPath, isDirectory);
 
-                if(parentForNewBlob==null){
+                if (parentForNewBlob == null) {
                     // This is a file at the root level, so the parent is the container.
                     parentForNewBlob = parentForImport;
                 }
@@ -178,14 +178,14 @@ public class UnzipToDocuments {
         return rootDocument;
     }
 
-/**
-         * Given a path from the zip file, make sure there are folderish documents in Nuxeo for each folder.
-        *
-        * @param session
+    /**
+     * Given a path from the zip file, make sure there are folderish documents in Nuxeo for each folder.
+     *
+     * @param session
      * @param entryPath
      * @param isDirectory
      * @return
-         */
+     */
     private DocumentModel handleFolders(CoreSession session, DocumentModel parentForImport, String entryPath, Boolean isDirectory) {
         DocumentModel parentFolderForNewEntry = null;
 
@@ -215,7 +215,7 @@ public class UnzipToDocuments {
             PathRef repoPathRefToCurrentDoc = new PathRef(repoPathToCurrentDoc);
             if (!session.exists(repoPathRefToCurrentDoc)) {
                 parentFolderForNewEntry = session.createDocument(session.createDocumentModel(repoPathToCurrentDocParent, pathParts[i], docType));
-                parentFolderForNewEntry.setPropertyValue("dc:title",pathParts[i]);
+                parentFolderForNewEntry.setPropertyValue("dc:title", pathParts[i]);
                 session.saveDocument(parentFolderForNewEntry);
             } else {
                 parentFolderForNewEntry = session.getDocument(repoPathRefToCurrentDoc);
@@ -237,7 +237,7 @@ public class UnzipToDocuments {
      */
     protected boolean shouldIgnoreEntry(String fileName) {
         if (fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
-                || fileName.endsWith(".DS_Store")) {
+            || fileName.endsWith(".DS_Store")) {
             return true;
         }
 
