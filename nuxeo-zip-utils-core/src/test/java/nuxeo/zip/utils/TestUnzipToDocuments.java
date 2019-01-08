@@ -99,6 +99,16 @@ public class TestUnzipToDocuments {
         PATHS_AND_DOCTYPES_SINGLEFOLDER_MAPPED.put("/nuxeo-unzip-test/f2/Picture.jpg", "Picture");
     }
 
+    private static final String WITHOUT_ROOT_ENTRY_ZIP = "without-root-folder-entry.zip";
+    private static final HashMap<String, String> PATHS_AND_DOCTYPES_WITHOUTROOTENTRY = new HashMap<>();
+
+    static {
+        PATHS_AND_DOCTYPES_WITHOUTROOTENTRY.put("/without-root-folder-entry/folder1", "Folder");
+        PATHS_AND_DOCTYPES_WITHOUTROOTENTRY.put("/without-root-folder-entry/folder1/File.pdf", "File");
+        PATHS_AND_DOCTYPES_WITHOUTROOTENTRY.put("/without-root-folder-entry/folder1/folder2", "Folder");
+        PATHS_AND_DOCTYPES_WITHOUTROOTENTRY.put("/without-root-folder-entry/folder1/folder2/Picture.jpg", "Picture");
+    }
+
     @Inject
     protected CoreSession coreSession;
 
@@ -293,6 +303,7 @@ public class TestUnzipToDocuments {
      * This test validates that, given a zip that is NOT of a single folder, you can't tell the plug-in to map the root
      * content to the root Document.
      */
+    // TODO - not actually implemented
     public void shouldFailToMapRootFolderToRootDoc() {
 
         File f = FileUtils.getResourceFileFromContext(FILES_AND_FOLDERS_ZIP);
@@ -305,6 +316,22 @@ public class TestUnzipToDocuments {
 
         DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
         assertNotNull(mainUnzippedFolderDoc);
+
+    }
+
+    @Test
+    public void shouldUnzipWithoutRootEntry() {
+
+        File f = FileUtils.getResourceFileFromContext(WITHOUT_ROOT_ENTRY_ZIP);
+
+        FileBlob blob = new FileBlob(f);
+
+        UnzipToDocuments unzipToDocs = new UnzipToDocuments(testDocsFolder, blob);
+
+        DocumentModel mainUnzippedFolderDoc = unzipToDocs.run();
+        assertNotNull(mainUnzippedFolderDoc);
+
+        checkUnzippedContent(PATHS_AND_DOCTYPES_WITHOUTROOTENTRY);
 
     }
 
