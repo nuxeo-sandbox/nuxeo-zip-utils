@@ -70,8 +70,6 @@ public class UnzipToDocuments {
         rootFolderishName = FilenameUtils.getBaseName(zipBlob.getFilename());
     }
 
-    // TODO: The assumptions below about folders are wrong. The code can be made more effecient/simpler once you understand that paths to folders are NOT required in a zip file. In fact they usually don't exist unless the folder is empty.
-
     /**
      * Creates Documents, in a hierarchical way, copying the tree-structure stored in the zip file.
      *
