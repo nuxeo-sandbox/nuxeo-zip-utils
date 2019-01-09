@@ -2,8 +2,7 @@
 
 [![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-zip-utils-master)](https://qa.nuxeo.org/jenkins/job/Sandbox/job/sandbox_nuxeo-zip-utils-master/)
 
-This plugin brings utilities around zip files stored in a Document, and also can zip the content of a Folderish Document.
-
+Utilities for dealing with archives (zip, tar, rar, etc.) in Nuxeo.
 
 # Operations
 
@@ -52,15 +51,20 @@ function run(input, params) {
 
 ## Files > `ZipUtils.UnzipToDocumentsOp`
 * Input is `Document` or `Blob`
-* Unzips the blob and creates the same structure in the target (the parent container when input is a Document and target is not provided).
-* Returns the created folderish
+* Extracts an archive and imports the files as Documents, creating the same structure.
+* _Note that in all cases the operation creates a root Document at the `target`, it doesn't unzip to the target._
+* When `input` is a Blob, the `target` parameter is required. When `input` is a Document the `target` is the parent of `input`.
+* The `name` and `title` of the root document is the name of the archive file or the name of the root folder in the archive, by default. You can specify your own name with the `mainFolderishName` parameter.
+* With regards to `mapRoot`: sometimes a zip file contains a single root folder and, thus, you want the root Document to be this folder - use `mapRoot = true` in this case. Other times the root Document is just a container to contain all the extracted content - use `mapRoot = false` in this case.
 * Parameters:
-  * `xpath` (optional)
-  * `target` (required if input is a blob): The parent document where to unzip
-  * `folderishType` (optional): Type to use when creating a Folderish (default is Folder)
-  * `commitModulo` (optional): Save and commit transaction regularly (strongly recommended to avoid transaction timeout when you know the zip contains a lot of files). Default is 100
-  * `mainFolderishType` (optional): Type of the main container created to expand the zip (default is Folder)
+  * `xpath` (optional): if `input` is a Document, this is the field that contains the archive
+  * `target` (required if input is a blob): The parent Document where the import root is created
+  * `folderishType` (optional): Type to use when creating Folderish children, default is `Folder`
+  * `commitModulo` (optional): Save and commit transaction regularly incrementally (strongly recommended to avoid transaction timeout when you know the zip contains a lot of files), default `100`
+  * `mainFolderishType` (optional): Type of the root Document, default is `Folder`
   * `mainFolderishName` (optional): The name for this main container
+  * `mapRoot` (optional): Map the root folder of the archive to the root Document, or not. Default `false`.
+* Returns the created root Folderish Document.
 
 
 ## Files > `ZipUtils.ZipFolderishOp`

@@ -19,30 +19,24 @@
  */
 package nuxeo.zip.utils;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nuxeo.ecm.core.api.*;
+import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.platform.filemanager.api.FileManager;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ecm.core.api.Blob;
-import org.nuxeo.ecm.core.api.CoreSession;
-import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
-import org.nuxeo.ecm.platform.filemanager.api.FileManager;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
 
 /**
  * @since 10.2
@@ -55,171 +49,119 @@ public class UnzipToDocuments {
 
     public static int DEFAULT_COMMIT_MODULO = 100;
 
-    protected DocumentModel parentDoc;
+    private DocumentModel parentDoc;
 
-    protected Blob zipBlob;
+    private Blob zipBlob;
 
-    protected String folderishType;
+    private String childFolderishType = DEFAULT_FOLDERISH_TYPE;
 
-    protected int commitModulo;
+    private int commitModulo = DEFAULT_COMMIT_MODULO;
 
-    // When the zip content does not starts with a path to a main folder used for the main extraction
-    protected String mainFolderishName = null;
+    private String rootFolderishName;
 
-    // When the zip content does not starts with a path to a main folder used for the main extraction
-    protected String mainFolderishType = DEFAULT_FOLDERISH_TYPE;
+    private String rootFolderishType = DEFAULT_FOLDERISH_TYPE;
 
-    public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob, String folderishType, int commitModulo) {
-        this.parentDoc = parentDoc;
-        this.zipBlob = zipBlob;
-        this.folderishType = StringUtils.isBlank(folderishType) ? DEFAULT_FOLDERISH_TYPE : folderishType;
-        this.commitModulo = commitModulo <= 0 ? DEFAULT_COMMIT_MODULO : commitModulo;
-    }
+    private Boolean mapRoot = false;
+
+    private DocumentModel rootDocument;
 
     public UnzipToDocuments(DocumentModel parentDoc, Blob zipBlob) {
-        this(parentDoc, zipBlob, null, 0);
+        this.parentDoc = parentDoc;
+        this.zipBlob = zipBlob;
+        rootFolderishName = FilenameUtils.getBaseName(zipBlob.getFilename());
     }
 
     /**
      * Creates Documents, in a hierarchical way, copying the tree-structure stored in the zip file.
-     * <p>
-     * If the zip file contains no path for a main extraction folder, one is created using either the file name of the
-     * zip blob (minus thez extension), or the valie set using <code>setMainFolderishName</code>. The sames goes for the
-     * type of container for this main container, it wikll be Folderish or the value set using
-     * <code>setMainFolderishType</code>
      *
-     * @return the main document (folderishType) containing the unzipped data
+     * <P>Sometimes a zip file is a zip of the folder. Often in these cases you want the root of the extracted files to
+     * be the root document in Nuxeo.
+     *
+     * <P>In other cases it's likely you want the root docuemnt in Nuxeo to be separate, therefore the contents of the
+     * zip file should be imported as *children*.
+     *
+     * <P>The truth is there is no way to detect the desired behavior so you need to specify it using the
+     * <code>mapRoot</code> property.
+     *
+     * <P>You can specify the document type of the root object using <code>setRootFolderishType</code>.
+     *
+     * <P>You can specify the name of the root object using <code>setRootFolderishName</code>, otherwise the name of the
+     * zip file or the name of the root folder in the zip will be used (depedning on the value of <code>mapRoot</code>.
+     *
+     * @return the main document containing the unzipped data
      * @since 10.2
      */
     public DocumentModel run() throws NuxeoException {
 
-        File mainParentFolderOnDisk = null;
+
+        File tempFolderFile = null;
         ZipFile zipFile = null;
-        DocumentModel mainUnzippedFolderDoc = null;
 
         CoreSession session = parentDoc.getCoreSession();
         FileManager fileManager = Framework.getService(FileManager.class);
 
         try {
-            String dcTitle;
-            String path;
-            int idx;
-            DocumentModel folderishDoc;
-            String parentDocPath = parentDoc.getPathAsString();
-            byte[] buffer = new byte[4096];
-            int len = 0;
-            int count = 0;
 
-            Path outDirPath = Framework.createTempDirectory("ZipUtils-Unzip");
-            mainParentFolderOnDisk = new File(outDirPath.toString());
-            boolean isMainUzippedFolderDoc = false;
-
-            // We must order the zip by names (full path names), so we make sure we cill create
-            // the Container before trying to create their content. For example,, as the entries
-            // are ordered by hash, we may receive "folder1/file.txt" before receiving "folder1/"
-            // Using a TreeMap to order by name
+            Path pathToTempFolder = Framework.createTempDirectory(rootFolderishType + "-Unzip");
+            tempFolderFile = new File(pathToTempFolder.toString());
             File zipBlobFile = zipBlob.getFile();
             zipFile = new ZipFile(zipBlobFile);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            Map<String, ZipEntry> entriesByName = new TreeMap<String, ZipEntry>();
+
+            DocumentModel parentForImport;
+
+            if (!mapRoot) {
+                rootDocument = session.createDocument(session.createDocumentModel(parentDoc.getPathAsString(), rootFolderishName, rootFolderishType));
+                parentForImport = rootDocument;
+            } else {
+                parentForImport = parentDoc;
+            }
+
+            int count = 0;
+
             while (entries.hasMoreElements()) {
+
+                DocumentModel parentForNewBlob;
                 ZipEntry entry = entries.nextElement();
-                entriesByName.put(entry.getName(), entry);
-            }
+                String entryPath = entry.getName();
 
-            // If the first entry is not a directory, it means we have to create a Folderish where to unzip the
-            // documents. We do this by detting a prefix. This while-loop will iterate only the first items, until it
-            // reaches a "non-ignorable" entry. If it is a direc tory, all os good. Else, a prexif will have to be used.
-            String directoryPrefix = "";
-            count = 0;
-            Iterator<ZipEntry> sortedEntries = entriesByName.values().iterator();
-            while (sortedEntries.hasNext()) {
-
-                ZipEntry entry = sortedEntries.next();
-
-                String fileName = entry.getName();
-                if (shouldIgnoreEntry(fileName)) {
+                if (shouldIgnoreEntry(entryPath)) {
                     continue;
                 }
 
-                count += 1;
-                if (count == 1 && !entry.isDirectory()) {
-                    // We need to create a folderish
-                    if (StringUtils.isNotBlank(mainFolderishName)) {
-                        directoryPrefix = mainFolderishName;
-                    } else {
-                        directoryPrefix = FilenameUtils.getBaseName(zipBlob.getFilename());
+                Boolean isDirectory = entry.isDirectory();
+
+                // Create folderish documents as needed and get the parent for the Blob; i.e. where the Blob will be
+                // imported.
+                parentForNewBlob = handleFolders(session, parentForImport, entryPath, isDirectory);
+
+                if (parentForNewBlob == null) {
+                    // This is a file at the root level, so the parent is the container.
+                    parentForNewBlob = parentForImport;
+                }
+
+                // I only need to import the files, not the folders, folderish docs are created by handleFolders()
+                if (!isDirectory) {
+                    String systemPath = pathToTempFolder.toString() + File.separator + entryPath;
+                    File newFile = new File(systemPath);
+                    if (!newFile.getParentFile().exists()) {
+                        newFile.getParentFile().mkdirs();
                     }
-                    mainUnzippedFolderDoc = session.createDocumentModel(parentDocPath, directoryPrefix,
-                            mainFolderishType);
-                    mainUnzippedFolderDoc.setPropertyValue("dc:title", directoryPrefix);
-                    mainUnzippedFolderDoc = session.createDocument(mainUnzippedFolderDoc);
-                    mainUnzippedFolderDoc = session.saveDocument(mainUnzippedFolderDoc);
-                    break;
-                } else {
-                    break;
-                }
-            }
-
-            // Now, we can walk this tree
-            sortedEntries = entriesByName.values().iterator();
-            while (sortedEntries.hasNext()) {
-
-                ZipEntry entry = sortedEntries.next();
-
-                String fileName = entry.getName();
-                String fileNamePrefixed = fileName;
-                if (shouldIgnoreEntry(fileName)) {
-                    continue;
-                }
-
-                if (!directoryPrefix.isEmpty()) {
-                    fileNamePrefixed = directoryPrefix + "/" + fileName;
-                }
-
-                dcTitle = fileNamePrefixed.split("/")[fileNamePrefixed.split("/").length - 1];
-                idx = fileNamePrefixed.lastIndexOf("/");
-                path = idx == -1 ? "" : fileNamePrefixed.substring(0, idx);
-
-                // Create the container
-                if (entry.isDirectory()) {
-
-                    if (path.indexOf("/") == -1) {
-                        isMainUzippedFolderDoc = true;
-                        path = "";
-                    } else {
-                        path = path.substring(0, path.lastIndexOf("/"));
+                    FileOutputStream fos = new FileOutputStream(newFile);
+                    InputStream zipEntryStream = zipFile.getInputStream(entry);
+                    int len;
+                    byte[] buffer = new byte[4096];
+                    while ((len = zipEntryStream.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
                     }
+                    fos.close();
 
-                    File newFile = new File(outDirPath.toString() + File.separator + fileName);
-                    newFile.mkdirs();
-
-                    folderishDoc = session.createDocumentModel(parentDocPath + "/" + path, dcTitle, folderishType);
-                    folderishDoc.setPropertyValue("dc:title", dcTitle);
-                    folderishDoc = session.createDocument(folderishDoc);
-                    folderishDoc = session.saveDocument(folderishDoc);
-
-                    if (isMainUzippedFolderDoc && mainUnzippedFolderDoc == null) {
-                        mainUnzippedFolderDoc = folderishDoc;
-                        isMainUzippedFolderDoc = false;
+                    if (parentForNewBlob != null) {
+                        // Import
+                        FileBlob blob = new FileBlob(newFile);
+                        fileManager.createDocumentFromBlob(session, blob, parentForNewBlob.getPathAsString(), true, blob.getFilename());
                     }
-
-                    continue;
                 }
-
-                // If not a directory, create the file on disk then import it
-                // (and so, let Nuxeo and its configuration decide the type of doc. to create)
-                File newFile = new File(outDirPath.toString() + File.separator + fileName);
-                FileOutputStream fos = new FileOutputStream(newFile);
-                InputStream zipEntryStream = zipFile.getInputStream(entry);
-                while ((len = zipEntryStream.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-                fos.close();
-
-                // Import
-                FileBlob blob = new FileBlob(newFile);
-                fileManager.createDocumentFromBlob(session, blob, parentDocPath + "/" + path, true, blob.getFilename());
 
                 count += 1;
                 if ((count % commitModulo) == 0) {
@@ -227,19 +169,14 @@ public class UnzipToDocuments {
                     TransactionHelper.startTransaction();
                 }
 
-            } // while(sortedEntries.hasNext())
-
-            TransactionHelper.commitOrRollbackTransaction();
-            TransactionHelper.startTransaction();
+                TransactionHelper.commitOrRollbackTransaction();
+                TransactionHelper.startTransaction();
+            }
 
         } catch (IOException e) {
-
             throw new NuxeoException("Error while unzipping and creating Documents", e);
-
         } finally {
-
-            org.apache.commons.io.FileUtils.deleteQuietly(mainParentFolderOnDisk);
-
+            org.apache.commons.io.FileUtils.deleteQuietly(tempFolderFile);
             try {
                 zipFile.close();
             } catch (IOException e) {
@@ -247,40 +184,92 @@ public class UnzipToDocuments {
             }
         }
 
-        return mainUnzippedFolderDoc;
+        return rootDocument;
     }
 
-    /*
-     * Chekc if the entry should be ignored. Either because not relevant (__MACOSX, ...) or dangerous ("../")
+    /**
+     * Given a path from the zip file, make sure there are folderish documents in Nuxeo for each folder.
+     *
+     * @param session
+     * @param entryPath
+     * @param isDirectory
+     * @return
+     */
+    private DocumentModel handleFolders(CoreSession session, DocumentModel parentForImport, String entryPath, Boolean isDirectory) {
+        DocumentModel parentFolderForNewEntry = null;
+
+        String repoPathToCurrentDoc = parentForImport.getPathAsString();
+        String repoPathToCurrentDocParent = parentForImport.getPathAsString();
+        String[] pathParts = entryPath.split("/");
+
+        int limit;
+        if (isDirectory)
+            limit = pathParts.length;
+        else
+            limit = pathParts.length - 1;
+
+        for (int i = 0; i < limit; i++) {
+
+            String docType;
+
+            if (i == 0) {
+                docType = rootFolderishType;
+            } else {
+                docType = childFolderishType;
+            }
+
+            repoPathToCurrentDoc += "/" + pathParts[i];
+
+            // Test to see if the document already exists...
+            PathRef repoPathRefToCurrentDoc = new PathRef(repoPathToCurrentDoc);
+            if (!session.exists(repoPathRefToCurrentDoc)) {
+                parentFolderForNewEntry = session.createDocument(session.createDocumentModel(repoPathToCurrentDocParent, pathParts[i], docType));
+                parentFolderForNewEntry.setPropertyValue("dc:title", pathParts[i]);
+                session.saveDocument(parentFolderForNewEntry);
+            } else {
+                parentFolderForNewEntry = session.getDocument(repoPathRefToCurrentDoc);
+            }
+
+            // The top-level folderish is the document we should return.
+            if (i == 0 && rootDocument == null) {
+                rootDocument = parentFolderForNewEntry;
+            }
+
+            repoPathToCurrentDocParent += "/" + pathParts[i];
+        }
+
+        return parentFolderForNewEntry;
+    }
+
+    /**
+     * Check if the entry should be ignored. Either because not relevant (__MACOSX, ...) or dangerous ("../")
      */
     protected boolean shouldIgnoreEntry(String fileName) {
         if (fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
-                || fileName.endsWith(".DS_Store")) {
+            || fileName.endsWith(".DS_Store")) {
             return true;
         }
 
         return false;
     }
 
-    public void setFolderishType(String folderishType) {
-        this.folderishType = folderishType;
+    public void setChildFolderishType(String childFolderishType) {
+        this.childFolderishType = StringUtils.isBlank(childFolderishType) ? DEFAULT_FOLDERISH_TYPE : childFolderishType;
     }
 
     public void setCommitModulo(int commitModulo) {
-        this.commitModulo = commitModulo;
+        this.commitModulo = commitModulo <= 0 ? DEFAULT_COMMIT_MODULO : commitModulo;
     }
 
-    public void setMainFolderishName(String name) {
-        mainFolderishName = name;
+    public void setRootFolderishName(String name) {
+        rootFolderishName = StringUtils.isBlank(name) ? null : name;
     }
 
-    /**
-     * If null or empty, <code>DEFAULT_FOLDERISH_TYPE</code> applies
-     * @param type
-     * @since TODO
-     */
-    public void setMainFolderishType(String type) {
-        mainFolderishType = StringUtils.isBlank(type) ? DEFAULT_FOLDERISH_TYPE : type;
+    public void setRootFolderishType(String type) {
+        rootFolderishType = StringUtils.isBlank(type) ? DEFAULT_FOLDERISH_TYPE : type;
     }
 
+    public void setMapRoot(Boolean mapRoot) {
+        this.mapRoot = mapRoot;
+    }
 }
