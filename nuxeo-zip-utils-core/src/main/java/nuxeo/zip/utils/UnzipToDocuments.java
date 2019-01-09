@@ -27,6 +27,7 @@ import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.platform.filemanager.api.FileManager;
 import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -116,6 +117,8 @@ public class UnzipToDocuments {
                 parentForImport = parentDoc;
             }
 
+            int count = 0;
+
             while (entries.hasMoreElements()) {
 
                 DocumentModel parentForNewBlob;
@@ -160,6 +163,14 @@ public class UnzipToDocuments {
                     }
                 }
 
+                count += 1;
+                if ((count % commitModulo) == 0) {
+                    TransactionHelper.commitOrRollbackTransaction();
+                    TransactionHelper.startTransaction();
+                }
+
+                TransactionHelper.commitOrRollbackTransaction();
+                TransactionHelper.startTransaction();
             }
 
         } catch (IOException e) {
