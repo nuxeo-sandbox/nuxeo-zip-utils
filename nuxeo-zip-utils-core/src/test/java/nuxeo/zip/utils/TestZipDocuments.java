@@ -21,6 +21,7 @@ import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
@@ -43,20 +44,17 @@ public class TestZipDocuments {
 
     public static final String VALID_ZIP = "valid-zip.zip";
 
-    // valid-zip.zip doesn not contain path to a main folder, but default UnzipToDocuments will create one, named by the
+    // valid-zip.zip test file contain path to a main folder, but default UnzipToDocuments will create one, named by the
     // zip file itself minus the extension.
     private static final List<String> PATHS_IN_ZIP1 = new ArrayList<String>();
     static {
-        PATHS_IN_ZIP1.add("valid-zip/File.pdf");
-        PATHS_IN_ZIP1.add("valid-zip/f1/");
-        PATHS_IN_ZIP1.add("valid-zip/f1/f1-f1/");
-        PATHS_IN_ZIP1.add("valid-zip/f1/f1-f1/Video.mp4");
-        PATHS_IN_ZIP1.add("valid-zip/f2/");
-        PATHS_IN_ZIP1.add("valid-zip/f2/Picture.jpg");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/File.pdf");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/f1/");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/f1/f1-f1/");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/f1/f1-f1/Video.mp4");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/f2/");
+        PATHS_IN_ZIP1.add("valid-zip/valid-zip/f2/Picture.jpg");
     }
-
-    // valid-zip-2.zip expands inside a "nuxeo-unzip-test" folder
-    public static final String VALID_ZIP_2 = "valid-zip-2.zip";
 
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_ZIP2 = new HashMap<String, String>();
     static {
@@ -139,8 +137,8 @@ public class TestZipDocuments {
         assertNotNull(mainUnzippedFolderDoc);
 
         // =====================================> Create a duplicate
-        DocumentModel parent = coreSession.getDocument(new PathRef("/test-unzip/valid-zip/f2"));
-        DocumentModel image = coreSession.getDocument(new PathRef("/test-unzip/valid-zip/f2/Picture.jpg"));
+        DocumentModel parent = coreSession.getDocument(new PathRef("/test-unzip/valid-zip/valid-zip/f2"));
+        DocumentModel image = coreSession.getDocument(new PathRef("/test-unzip/valid-zip/valid-zip/f2/Picture.jpg"));
         // Create 3 extra copies
         for (int i = 0; i < 3; i++) {
             /* DocumentModel ignore= */ coreSession.copy(image.getRef(), parent.getRef(), image.getName());
@@ -164,9 +162,9 @@ public class TestZipDocuments {
         }
 
         // Check the extra have been renamed
-        assertTrue(entries.contains("valid-zip/f2/Picture-2.jpg"));
-        assertTrue(entries.contains("valid-zip/f2/Picture-3.jpg"));
-        assertTrue(entries.contains("valid-zip/f2/Picture-4.jpg"));
+        assertTrue(entries.contains("valid-zip/valid-zip/f2/Picture-2.jpg"));
+        assertTrue(entries.contains("valid-zip/valid-zip/f2/Picture-3.jpg"));
+        assertTrue(entries.contains("valid-zip/valid-zip/f2/Picture-4.jpg"));
 
     }
 }

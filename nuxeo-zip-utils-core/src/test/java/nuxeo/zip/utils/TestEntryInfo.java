@@ -36,11 +36,12 @@ import nuxeo.zip.utils.operations.EntryInfo;
     "org.nuxeo.ecm.platform.picture.core", "org.nuxeo.ecm.platform.picture.convert", "org.nuxeo.ecm.platform.tag",
     "org.nuxeo.ecm.platform.commandline.executor", "org.nuxeo.ecm.platform.rendition.core" })
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
+@Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestEntryInfo {
 
     public static final String VALID_ZIP = "valid-zip.zip";
 
-    public static final String VALID_PATH = "f2/Picture.jpg";
+    public static final String VALID_PATH = "valid-zip/f2/Picture.jpg";
 
     public static final String NOT_VALID_ZIP = "not-valid-zip.zip";
 

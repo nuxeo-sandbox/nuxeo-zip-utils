@@ -30,6 +30,7 @@ import nuxeo.zip.utils.operations.ZipInfo;
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
+@Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestZipInfo {
 
     public static final String VALID_ZIP = "valid-zip.zip";
@@ -38,7 +39,7 @@ public class TestZipInfo {
 
     public static final int COUNT_FILES = 3;
 
-    public static final int COUNT_DIRECTORIES = 3;
+    public static final int COUNT_DIRECTORIES = 4;
 
     @Inject
     protected CoreSession session;

@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.common.utils.FileUtils;
-import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
@@ -42,10 +41,10 @@ public class TestUnzipToDocumentsSimple {
     private static final HashMap<String, String> PATHS_AND_DOCTYPES_FILESANDFOLDERS = new HashMap<>();
 
     static {
-        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/folder1", "Folder");
-        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/folder1/File.pdf", "File");
-        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/folder1/folder2", "Folder");
-        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/folder1/folder2/Picture.jpg", "Picture");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/without-root-folder-entry/folder1", "Folder");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/without-root-folder-entry/folder1/File.pdf", "File");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/without-root-folder-entry/folder1/folder2", "Folder");
+        PATHS_AND_DOCTYPES_FILESANDFOLDERS.put("/without-root-folder-entry/folder1/folder2/Picture.jpg", "Picture");
     }
 
     @Inject

@@ -33,11 +33,12 @@ import nuxeo.zip.utils.operations.GetFile;
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
+@Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestGetFile {
 
     public static final String VALID_ZIP = "valid-zip.zip";
 
-    public static final String VALID_PATH = "f2/Picture.jpg";
+    public static final String VALID_PATH = "valid-zip/f2/Picture.jpg";
 
     public static final String FILE_NAME = "Picture.jpg";
 
