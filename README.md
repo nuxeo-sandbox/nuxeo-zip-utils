@@ -97,7 +97,7 @@ mvn clean install
 
 # Support
 
-**These features are sand-boxed and not yet part of the Nuxeo Production platform.**
+**These features are not yet part of the Nuxeo Production platform.**
 
 These solutions are provided for inspiration and we encourage customers to use them as code samples and learning resources.
 
