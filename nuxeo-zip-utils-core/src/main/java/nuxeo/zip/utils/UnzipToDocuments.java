@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.*;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.platform.filemanager.api.FileImporterContext;
 import org.nuxeo.ecm.platform.filemanager.api.FileManager;
 import org.nuxeo.runtime.api.Framework;
 import org.nuxeo.runtime.transaction.TransactionHelper;
@@ -159,7 +160,12 @@ public class UnzipToDocuments {
                     if (parentForNewBlob != null) {
                         // Import
                         FileBlob blob = new FileBlob(newFile);
-                        fileManager.createDocumentFromBlob(session, blob, parentForNewBlob.getPathAsString(), true, blob.getFilename());
+                        
+                        FileImporterContext context = FileImporterContext.builder(session, blob, parentForNewBlob.getPathAsString())
+                                .overwrite(true)
+                                .fileName(blob.getFilename())
+                                .build();
+                        fileManager.createOrUpdateDocument(context);
                     }
                 }
 
