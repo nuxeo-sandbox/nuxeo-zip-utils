@@ -16,8 +16,8 @@
   <production-state>testing</production-state>
   <supported>false</supported>
   <platforms>
-    <platform>server-@DISTRIB_VERSION@</platform>
-    <platform>server-@DISTRIB_VERSION@-HF*</platform>
+    <platform>lts-@NUXEO_TARGET_VERSION@</platform>
+    <platform>lts-2021.*</platform>
   </platforms>
   <!-- Dependencies on other packages -->
   <!-- <dependencies> -->

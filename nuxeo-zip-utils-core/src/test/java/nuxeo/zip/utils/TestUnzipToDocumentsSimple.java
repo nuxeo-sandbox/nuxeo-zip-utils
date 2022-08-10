@@ -29,10 +29,11 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(FeaturesRunner.class)
 @Features(PlatformFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-@Deploy({"org.nuxeo.ecm.platform.video.api", "org.nuxeo.ecm.platform.video.core",
-    "org.nuxeo.ecm.platform.picture.api", "org.nuxeo.ecm.platform.picture.core",
+@Deploy({"org.nuxeo.ecm.platform.video",
+    "org.nuxeo.ecm.platform.picture.core",
     "org.nuxeo.ecm.platform.tag",
-    "org.nuxeo.ecm.platform.filemanager.core", "org.nuxeo.ecm.platform.types.core"})
+    "org.nuxeo.ecm.platform.filemanager",
+    "org.nuxeo.ecm.platform.types"})
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestUnzipToDocumentsSimple {

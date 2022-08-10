@@ -21,23 +21,26 @@ import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.DocumentModelList;
 import org.nuxeo.ecm.core.api.PathRef;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.core.event.EventService;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 @RunWith(FeaturesRunner.class)
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-@Deploy({ "org.nuxeo.ecm.platform.video.api", "org.nuxeo.ecm.platform.video.core", "org.nuxeo.ecm.platform.picture.api",
-        "org.nuxeo.ecm.platform.picture.core", "org.nuxeo.ecm.platform.tag", "org.nuxeo.ecm.platform.filemanager.core",
-        "org.nuxeo.ecm.platform.types.core" })
+@Deploy({ "org.nuxeo.ecm.platform.video",
+        "org.nuxeo.ecm.platform.picture.core",
+        "org.nuxeo.ecm.platform.tag",
+        "org.nuxeo.ecm.platform.filemanager",
+        "org.nuxeo.ecm.platform.types" })
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestZipDocuments {
@@ -72,6 +75,9 @@ public class TestZipDocuments {
     @Inject
     protected AutomationService automationService;
 
+    @Inject
+    protected TransactionalFeature txFeature;
+
     protected DocumentModel testDocsFolder;
 
     @Before
@@ -90,6 +96,7 @@ public class TestZipDocuments {
 
     @After
     public void cleanup() {
+        txFeature.nextTransaction();
         coreSession.removeDocument(testDocsFolder.getRef());
         coreSession.save();
     }

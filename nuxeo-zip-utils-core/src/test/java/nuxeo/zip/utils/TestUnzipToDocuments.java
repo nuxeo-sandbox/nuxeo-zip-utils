@@ -14,6 +14,7 @@ import org.nuxeo.ecm.platform.test.PlatformFeature;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
+import org.nuxeo.runtime.test.runner.TransactionalFeature;
 import org.nuxeo.runtime.transaction.TransactionHelper;
 
 import javax.inject.Inject;
@@ -29,10 +30,11 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(FeaturesRunner.class)
 @Features(PlatformFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-@Deploy({"org.nuxeo.ecm.platform.video.api", "org.nuxeo.ecm.platform.video.core",
-    "org.nuxeo.ecm.platform.picture.api", "org.nuxeo.ecm.platform.picture.core",
+@Deploy({"org.nuxeo.ecm.platform.video",
+    "org.nuxeo.ecm.platform.picture.core",
     "org.nuxeo.ecm.platform.tag",
-    "org.nuxeo.ecm.platform.filemanager.core", "org.nuxeo.ecm.platform.types.core"})
+    "org.nuxeo.ecm.platform.filemanager",
+    "org.nuxeo.ecm.platform.types"})
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestUnzipToDocuments {
@@ -111,6 +113,9 @@ public class TestUnzipToDocuments {
     @Inject
     protected CoreSession coreSession;
 
+    @Inject
+    protected TransactionalFeature txFeature;
+
     private DocumentModel testDocsFolder;
 
     @Before
@@ -129,6 +134,7 @@ public class TestUnzipToDocuments {
 
     @After
     public void cleanup() {
+        txFeature.nextTransaction();
         coreSession.removeDocument(testDocsFolder.getRef());
         coreSession.save();
     }

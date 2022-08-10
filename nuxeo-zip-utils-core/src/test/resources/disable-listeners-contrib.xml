@@ -2,17 +2,31 @@
 <component name="nuxeo.unzip.file.test.listeners">
 
   <require>org.nuxeo.ecm.core.event.EventServiceComponent</require>
+  <require>org.nuxeo.platform.video.core.listeners</require>
+  <require>org.nuxeo.ecm.platform.picture.listeners</require>
+  <require>org.nuxeo.ecm.platform.thumbnail.listener</require>
 
   <extension target="org.nuxeo.ecm.core.event.EventServiceComponent" point="listener">
 
     <listener enabled="false" name="pictureChangedListener"></listener>
     <listener enabled="false" name="pictureViewsGenerationListener"></listener>
     <listener enabled="false" name="videoChangedListener"></listener>
-    <listener enabled="false" name="videoAutomaticConversions"></listener>
     <!--  From Thumbnails -->
     <listener enabled="false" name="updateThumbListener"></listener>
     <listener enabled="false" name="checkBlobUpdate"></listener>
 
+  </extension>
+
+  <require>org.nuxeo.ecm.platform.imaging.bulk</require>
+  <extension target="org.nuxeo.ecm.core.bulk" point="actions">
+    <action name="recomputeViews" enabled="false" />
+  </extension>
+
+  <require>org.nuxeo.ecm.platform.video.service.contrib</require>
+  <extension target="org.nuxeo.ecm.platform.video.service.VideoService"
+    point="automaticVideoConversions">
+    <automaticVideoConversion name="MP4 480p" enabled="false" />
+    <automaticVideoConversion name="WebM 480p" enabled="false" />
   </extension>
 
 </component>

@@ -40,7 +40,7 @@ function run(input, params) {
 * Input is `Document` or `Blob`
 * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
 * Return the input unchanged
-* Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method (0 = stored, 8 =  compressed)
+* Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method` (0 = stored, 8 =  compressed)
 
 
 ## Files > `ZipUtils.GetFile`

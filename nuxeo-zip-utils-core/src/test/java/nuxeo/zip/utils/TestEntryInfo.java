@@ -32,9 +32,11 @@ import nuxeo.zip.utils.operations.EntryInfo;
 @RunWith(FeaturesRunner.class)
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
-@Deploy({ "org.nuxeo.ecm.platform.thumbnail", "org.nuxeo.ecm.platform.picture.api",
-    "org.nuxeo.ecm.platform.picture.core", "org.nuxeo.ecm.platform.picture.convert", "org.nuxeo.ecm.platform.tag",
-    "org.nuxeo.ecm.platform.commandline.executor", "org.nuxeo.ecm.platform.rendition.core" })
+@Deploy({ "org.nuxeo.ecm.platform.thumbnail",
+    "org.nuxeo.ecm.platform.picture.core",
+    "org.nuxeo.ecm.platform.tag",
+    "org.nuxeo.ecm.platform.commandline.executor",
+    "org.nuxeo.ecm.platform.rendition.core" })
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestEntryInfo {
