@@ -74,26 +74,25 @@ public class UnzipToDocuments {
 
     /**
      * Creates Documents, in a hierarchical way, copying the tree-structure stored in the zip file.
-     *
-     * <P>Sometimes a zip file is a zip of the folder. Often in these cases you want the root of the extracted files to
+     * <P>
+     * Sometimes a zip file is a zip of the folder. Often in these cases you want the root of the extracted files to
      * be the root document in Nuxeo.
-     *
-     * <P>In other cases it's likely you want the root docuemnt in Nuxeo to be separate, therefore the contents of the
+     * <P>
+     * In other cases it's likely you want the root docuemnt in Nuxeo to be separate, therefore the contents of the
      * zip file should be imported as *children*.
-     *
-     * <P>The truth is there is no way to detect the desired behavior so you need to specify it using the
+     * <P>
+     * The truth is there is no way to detect the desired behavior so you need to specify it using the
      * <code>mapRoot</code> property.
-     *
-     * <P>You can specify the document type of the root object using <code>setRootFolderishType</code>.
-     *
-     * <P>You can specify the name of the root object using <code>setRootFolderishName</code>, otherwise the name of the
+     * <P>
+     * You can specify the document type of the root object using <code>setRootFolderishType</code>.
+     * <P>
+     * You can specify the name of the root object using <code>setRootFolderishName</code>, otherwise the name of the
      * zip file or the name of the root folder in the zip will be used (depedning on the value of <code>mapRoot</code>.
      *
      * @return the main document containing the unzipped data
      * @since 10.2
      */
     public DocumentModel run() throws NuxeoException {
-
 
         File tempFolderFile = null;
         ZipFile zipFile = null;
@@ -108,11 +107,14 @@ public class UnzipToDocuments {
             File zipBlobFile = zipBlob.getFile();
             zipFile = new ZipFile(zipBlobFile);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            
+            logger.info("UnzipToDocuments, starting, for blob " + zipFile.getName());
 
             DocumentModel parentForImport;
 
             if (!mapRoot) {
-                rootDocument = session.createDocument(session.createDocumentModel(parentDoc.getPathAsString(), rootFolderishName, rootFolderishType));
+                rootDocument = session.createDocument(
+                        session.createDocumentModel(parentDoc.getPathAsString(), rootFolderishName, rootFolderishType));
                 parentForImport = rootDocument;
             } else {
                 parentForImport = parentDoc;
@@ -129,6 +131,8 @@ public class UnzipToDocuments {
                 if (shouldIgnoreEntry(entryPath)) {
                     continue;
                 }
+                
+                logger.info("    Handling entry: " + entryPath);
 
                 Boolean isDirectory = entry.isDirectory();
 
@@ -160,11 +164,12 @@ public class UnzipToDocuments {
                     if (parentForNewBlob != null) {
                         // Import
                         FileBlob blob = new FileBlob(newFile);
-                        
-                        FileImporterContext context = FileImporterContext.builder(session, blob, parentForNewBlob.getPathAsString())
-                                .overwrite(true)
-                                .fileName(blob.getFilename())
-                                .build();
+
+                        FileImporterContext context = FileImporterContext.builder(session, blob,
+                                parentForNewBlob.getPathAsString())
+                                                                         .overwrite(true)
+                                                                         .fileName(blob.getFilename())
+                                                                         .build();
                         fileManager.createOrUpdateDocument(context);
                     }
                 }
@@ -174,9 +179,6 @@ public class UnzipToDocuments {
                     TransactionHelper.commitOrRollbackTransaction();
                     TransactionHelper.startTransaction();
                 }
-
-                TransactionHelper.commitOrRollbackTransaction();
-                TransactionHelper.startTransaction();
             }
 
         } catch (IOException e) {
@@ -188,6 +190,9 @@ public class UnzipToDocuments {
             } catch (IOException e) {
                 // Ignore;
             }
+
+            TransactionHelper.commitOrRollbackTransaction();
+            TransactionHelper.startTransaction();
         }
 
         return rootDocument;
@@ -201,7 +206,8 @@ public class UnzipToDocuments {
      * @param isDirectory
      * @return
      */
-    private DocumentModel handleFolders(CoreSession session, DocumentModel parentForImport, String entryPath, Boolean isDirectory) {
+    private DocumentModel handleFolders(CoreSession session, DocumentModel parentForImport, String entryPath,
+            Boolean isDirectory) {
         DocumentModel parentFolderForNewEntry = null;
 
         String repoPathToCurrentDoc = parentForImport.getPathAsString();
@@ -229,7 +235,8 @@ public class UnzipToDocuments {
             // Test to see if the document already exists...
             PathRef repoPathRefToCurrentDoc = new PathRef(repoPathToCurrentDoc);
             if (!session.exists(repoPathRefToCurrentDoc)) {
-                parentFolderForNewEntry = session.createDocument(session.createDocumentModel(repoPathToCurrentDocParent, pathParts[i], docType));
+                parentFolderForNewEntry = session.createDocument(
+                        session.createDocumentModel(repoPathToCurrentDocParent, pathParts[i], docType));
                 parentFolderForNewEntry.setPropertyValue("dc:title", pathParts[i]);
                 session.saveDocument(parentFolderForNewEntry);
             } else {
@@ -252,7 +259,7 @@ public class UnzipToDocuments {
      */
     protected boolean shouldIgnoreEntry(String fileName) {
         if (fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
-            || fileName.endsWith(".DS_Store")) {
+                || fileName.endsWith(".DS_Store")) {
             return true;
         }
 

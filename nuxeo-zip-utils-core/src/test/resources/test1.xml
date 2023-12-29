@@ -1,10 +1,6 @@
 <?xml version = '1.0'?>
 <!DOCTYPE connections>
 <connections>
-<<<<<<< HEAD:testdata/test.xml
-=======
-    as
->>>>>>> 75cb63ff7005344589b57d17338b64783f8f430c:testdata/test.xml
    <connection>
       <JDBC_PORT>1521</JDBC_PORT>
       <HOSTNAME>10.248.40.111</HOSTNAME>

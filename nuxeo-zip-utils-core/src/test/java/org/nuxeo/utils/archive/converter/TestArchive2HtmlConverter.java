@@ -43,6 +43,8 @@ import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
 import org.nuxeo.ecm.core.api.impl.blob.URLBlob;
 
+// We don't have these files in the resources, not even in the git history of all commits...
+@Ignore
 public class TestArchive2HtmlConverter extends BaseConverterTest {
 
     protected static BlobHolder getBlobFromURL(String url, String name) throws IOException {

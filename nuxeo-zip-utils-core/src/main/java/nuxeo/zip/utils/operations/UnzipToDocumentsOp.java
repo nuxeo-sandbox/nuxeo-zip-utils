@@ -20,12 +20,18 @@ import nuxeo.zip.utils.UnzipToDocuments;
 @Operation(id = UnzipToDocumentsOp.ID, category = Constants.CAT_BLOB, label = "ZipUtils: Unzip to Documents", description = ""
         + "Extracts an archive and imports the files as Documents, creating the same structure."
         + " Note that in all cases the operation creates a root Document at the target."
-        + " When input is a Blob, the target parameter is required. When input is a Document, the blob is read using the xpath, from file:content by default, and the target is the parent of input."
+        + " When input is a Blob, the target parameter is required. When input is a Document, the blob is read using the xpath,"
+        + " from file:content by default, and the target is the parent of input."
         + " The operation does nothing if the input is null."
-        + " The name and title of the root document is the name of the archive file or the name of the root folder in the archive, by default. You can specify your own name with the mainFolderishName parameter."
-        + " The operation creates Folder Documents by default for any folders in the archive. You can change the type of the root Document that is created, as well as any children, using mainFolderishType and folderishType, respectively."
-        + " The value of commitModulo is used to commit the transaction incrementally during the import. With the default value fo 100, the transaction is committed for every 100 files imported."
-        + " With regards to mapRoot: sometimes a zip file contains a single root folder and, thus, you want the root Document to be this folder - use mapRoot = true in this case. Other times the root Document is just a container to contain all the extracted content - use mapRoot = false in this case."
+        + " The name and title of the root document is the name of the archive file or the name of the root folder in the archive,"
+        + " by default. You can specify your own name with the mainFolderishName parameter."
+        + " The operation creates Folder Documents by default for any folders in the archive. You can change the type of the root"
+        + " Document that is created, as well as any children, using mainFolderishType and folderishType, respectively."
+        + " The value of commitModulo is used to commit the transaction incrementally during the import. With the default value"
+        + " fo 100, the transaction is committed for every 100 files imported."
+        + " With regards to mapRoot: sometimes a zip file contains a single root folder and, thus, you want the root Document to"
+        + " be this folder - use mapRoot = true in this case. Other times the root Document is just a container to contain all"
+        + " the extracted content - use mapRoot = false in this case."
         + " Returns the created root Folderish Document.")
 public class UnzipToDocumentsOp {
 
