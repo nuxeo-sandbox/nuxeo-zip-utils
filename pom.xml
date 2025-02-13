@@ -1,27 +1,24 @@
-<?xml version="1.0"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.nuxeo</groupId>
     <artifactId>nuxeo-parent</artifactId>
-    <version>2023.2</version>
+    <version>2023.24</version>
   </parent>
-
   <groupId>nuxeo.zip.utils</groupId>
   <artifactId>nuxeo-zip-utils-parent</artifactId>
-  <version>2023.0.0-SNAPSHOT</version>
+  <version>2023.2.0-SNAPSHOT</version>
   <name>Nuxeo Zip Utils parent</name>
   <description/>
   <packaging>pom</packaging>
-
   <properties>
     <!-- Skip Nuxeo enforcer rules by default -->
     <nuxeo.skip.enforcer>true</nuxeo.skip.enforcer>
     <nuxeo.target.version>2023.*</nuxeo.target.version>
-    <skipDocker>true</skipDocker>
+    <skipDocker>false</skipDocker>
+    <pushReleaseChanges>false</pushReleaseChanges>
   </properties>
-
   <modules>
     <module>nuxeo-zip-utils-core</module>
     <module>nuxeo-zip-utils-package</module>
@@ -33,7 +30,6 @@
   <ciManagement/>
   <developers/>
   <distributionManagement/>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -48,7 +44,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-
   <repositories>
     <repository>
       <id>maven-public</id>
@@ -62,19 +57,8 @@
       </snapshots>
     </repository>
     <repository>
-      <id>maven-internal</id>
-      <url>https://packages.nuxeo.com/repository/maven-internal/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>nuxeo-studio</id>
-      <url>https://connect.nuxeo.com/nuxeo/site/studio/maven</url>
+      <id>maven-private</id>
+      <url>https://packages.nuxeo.com/repository/maven-private/</url>
       <releases>
         <enabled>true</enabled>
       </releases>
@@ -84,7 +68,6 @@
       </snapshots>
     </repository>
   </repositories>
-
   <pluginRepositories>
     <pluginRepository>
       <id>maven-public</id>
@@ -97,16 +80,29 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
-
-   <build>
-    <pluginManagement>
+  <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.3.1</version>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <projectVersionPolicyId>SemVerVersionPolicy</projectVersionPolicyId>
+          <tagNameFormat>@{project.version}</tagNameFormat>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <scmReleaseCommitComment>Release @{releaseLabel}</scmReleaseCommitComment>
+          <scmDevelopmentCommitComment>Post Release @{releaseLabel}</scmDevelopmentCommitComment>
+          <pushChanges>${pushReleaseChanges}</pushChanges>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.18.0</version>
+        <configuration>
+          <ruleSet/>
+        </configuration>
       </plugin>
     </plugins>
-    </pluginManagement>
   </build>
 </project>
