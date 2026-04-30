@@ -1,9 +1,9 @@
 package org.nuxeo.utils.archive.operations;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.net.URL;
 
 import jakarta.inject.Inject;
 
@@ -20,7 +20,6 @@ import org.nuxeo.ecm.automation.test.AutomationFeature;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
-import org.nuxeo.ecm.core.api.impl.blob.URLBlob;
 import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 import org.nuxeo.ecm.core.test.annotations.Granularity;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
@@ -37,14 +36,9 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
         "org.nuxeo.ecm.platform.commandline.executor",
         "org.nuxeo.ecm.platform.rendition.core",
         "nuxeo.zip.utils.nuxeo-zip-utils-core" })
-
-//We don't have these test files in the resources, not even in the git history of all commits...
-@Ignore
 public class TestDetectArchiveTypeOp {
 
-    public static final String VALID_ZIP = "valid-zip.zip";
-
-    public static final String NOT_VALID_ZIP = "not-valid-zip.zip";
+    protected static final String TEST_ARCHIVES = "TestArchives/";
 
     @Inject
     protected CoreSession session;
@@ -52,138 +46,161 @@ public class TestDetectArchiveTypeOp {
     @Inject
     protected AutomationService automationService;
 
-    private URLBlob stream(String file) {
-        URL input = getClass().getResource(file);
-        return new URLBlob(input, file, null);
+    private FileBlob loadTestFile(String fileName) {
+        File f = FileUtils.getResourceFileFromContext(TEST_ARCHIVES + fileName);
+        return new FileBlob(f);
     }
 
-    private void detectType(Blob input, String compress, String archive) throws OperationException {
-
+    private void detectType(Blob input, String expectedCompress, String expectedArchive) throws OperationException {
         OperationContext ctx = new OperationContext(session);
         ctx.setInput(input);
         Blob result = (Blob) automationService.run(ctx, DetectArchiveTypeOp.ID);
 
         assertEquals(input, result);
-        assertEquals(archive, ctx.get(DetectArchiveTypeOp.ARCHIVE_TYPE));
-        assertEquals(compress, ctx.get(DetectArchiveTypeOp.COMPRESS_TYPE));
-
+        if (expectedArchive == null) {
+            assertNull(ctx.get(DetectArchiveTypeOp.ARCHIVE_TYPE));
+        } else {
+            assertEquals(expectedArchive, ctx.get(DetectArchiveTypeOp.ARCHIVE_TYPE));
+        }
+        if (expectedCompress == null) {
+            assertNull(ctx.get(DetectArchiveTypeOp.COMPRESS_TYPE));
+        } else {
+            assertEquals(expectedCompress, ctx.get(DetectArchiveTypeOp.COMPRESS_TYPE));
+        }
     }
 
     @Test
     public void testZip() throws OperationException {
-        File f = FileUtils.getResourceFileFromContext(VALID_ZIP);
-        FileBlob blob = new FileBlob(f);
-        detectType(blob, null, ArchiveStreamFactory.ZIP);
-    }
-
-    @Test
-    public void test7z() throws OperationException {
-        detectType(stream("/bla.7z"), null, ArchiveStreamFactory.SEVEN_Z);
-    }
-
-    @Test
-    public void testAr() throws OperationException {
-        detectType(stream("/bla.ar"), null, ArchiveStreamFactory.AR);
-    }
-
-    @Test
-    public void testArj() throws OperationException {
-        detectType(stream("/bla.arj"), null, ArchiveStreamFactory.ARJ);
-    }
-
-    @Test
-    public void testCpio() throws OperationException {
-        detectType(stream("/bla.cpio"), null, ArchiveStreamFactory.CPIO);
-    }
-
-    @Test
-    public void testDump() throws OperationException {
-        detectType(stream("/bla.dump"), null, ArchiveStreamFactory.DUMP);
-    }
-
-    @Test
-    public void testJar() throws OperationException {
-        detectType(stream("/bla.jar"), null, ArchiveStreamFactory.ZIP);
-    }
-
-    @Test
-    public void testPack() throws OperationException {
-        detectType(stream("/bla.pack"), CompressorStreamFactory.PACK200, ArchiveStreamFactory.ZIP);
-    }
-
-    @Test
-    public void testDumpLz4() throws OperationException {
-        detectType(stream("/bla.dump.lz4"), CompressorStreamFactory.LZ4_FRAMED, ArchiveStreamFactory.DUMP);
+        detectType(loadTestFile("bla.zip"), null, ArchiveStreamFactory.ZIP);
     }
 
     @Test
     public void testTar() throws OperationException {
-        detectType(stream("/bla.tar"), null, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarBz2() throws OperationException {
-        detectType(stream("/bla.tar.bz2"), CompressorStreamFactory.BZIP2, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarLz4() throws OperationException {
-        detectType(stream("/bla.tar.lz4"), CompressorStreamFactory.LZ4_FRAMED, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarDeflatez() throws OperationException {
-        detectType(stream("/bla.tar.deflatez"), CompressorStreamFactory.DEFLATE, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarLzma() throws OperationException {
-        detectType(stream("/bla.tar.lzma"), CompressorStreamFactory.LZMA, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarSz() throws OperationException {
-        detectType(stream("/bla.tar.sz"), CompressorStreamFactory.SNAPPY_FRAMED, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarXz() throws OperationException {
-        detectType(stream("/bla.tar.xz"), CompressorStreamFactory.XZ, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarZ() throws OperationException {
-        detectType(stream("/bla.tar.Z"), CompressorStreamFactory.Z, ArchiveStreamFactory.TAR);
-    }
-
-    @Test
-    public void testTarZst() throws OperationException {
-        detectType(stream("/bla.tar.zst"), CompressorStreamFactory.ZSTANDARD, ArchiveStreamFactory.TAR);
+        detectType(loadTestFile("bla.tar"), null, ArchiveStreamFactory.TAR);
     }
 
     @Test
     public void testTgz() throws OperationException {
-        detectType(stream("/bla.tgz"), CompressorStreamFactory.GZIP, ArchiveStreamFactory.TAR);
+        detectType(loadTestFile("bla.tgz"), CompressorStreamFactory.GZIP, ArchiveStreamFactory.TAR);
     }
 
+    @Test
+    public void testTarBz2() throws OperationException {
+        detectType(loadTestFile("bla.tar.bz2"), CompressorStreamFactory.BZIP2, ArchiveStreamFactory.TAR);
+    }
+
+    @Test
+    public void testTarXz() throws OperationException {
+        detectType(loadTestFile("bla.tar.xz"), CompressorStreamFactory.XZ, ArchiveStreamFactory.TAR);
+    }
+
+    // --- Exotic formats: ignored until test archive files are provided in TestArchives/ ---
+
+    @Ignore("Missing test file: bla.7z")
+    @Test
+    public void test7z() throws OperationException {
+        detectType(loadTestFile("bla.7z"), null, ArchiveStreamFactory.SEVEN_Z);
+    }
+
+    @Ignore("Missing test file: bla.ar")
+    @Test
+    public void testAr() throws OperationException {
+        detectType(loadTestFile("bla.ar"), null, ArchiveStreamFactory.AR);
+    }
+
+    @Ignore("Missing test file: bla.arj")
+    @Test
+    public void testArj() throws OperationException {
+        detectType(loadTestFile("bla.arj"), null, ArchiveStreamFactory.ARJ);
+    }
+
+    @Ignore("Missing test file: bla.cpio")
+    @Test
+    public void testCpio() throws OperationException {
+        detectType(loadTestFile("bla.cpio"), null, ArchiveStreamFactory.CPIO);
+    }
+
+    @Ignore("Missing test file: bla.dump")
+    @Test
+    public void testDump() throws OperationException {
+        detectType(loadTestFile("bla.dump"), null, ArchiveStreamFactory.DUMP);
+    }
+
+    @Ignore("Missing test file: bla.jar")
+    @Test
+    public void testJar() throws OperationException {
+        detectType(loadTestFile("bla.jar"), null, ArchiveStreamFactory.ZIP);
+    }
+
+    @Ignore("Missing test file: bla.pack")
+    @Test
+    public void testPack() throws OperationException {
+        detectType(loadTestFile("bla.pack"), CompressorStreamFactory.PACK200, ArchiveStreamFactory.ZIP);
+    }
+
+    @Ignore("Missing test file: bla.dump.lz4")
+    @Test
+    public void testDumpLz4() throws OperationException {
+        detectType(loadTestFile("bla.dump.lz4"), CompressorStreamFactory.LZ4_FRAMED, ArchiveStreamFactory.DUMP);
+    }
+
+    @Ignore("Missing test file: bla.tar.deflatez")
+    @Test
+    public void testTarDeflatez() throws OperationException {
+        detectType(loadTestFile("bla.tar.deflatez"), CompressorStreamFactory.DEFLATE, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.tar.lzma")
+    @Test
+    public void testTarLzma() throws OperationException {
+        detectType(loadTestFile("bla.tar.lzma"), CompressorStreamFactory.LZMA, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.tar.sz")
+    @Test
+    public void testTarSz() throws OperationException {
+        detectType(loadTestFile("bla.tar.sz"), CompressorStreamFactory.SNAPPY_FRAMED, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.tar.Z")
+    @Test
+    public void testTarZ() throws OperationException {
+        detectType(loadTestFile("bla.tar.Z"), CompressorStreamFactory.Z, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.tar.zst")
+    @Test
+    public void testTarZst() throws OperationException {
+        detectType(loadTestFile("bla.tar.zst"), CompressorStreamFactory.ZSTANDARD, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.tar.lz4")
+    @Test
+    public void testTarLz4() throws OperationException {
+        detectType(loadTestFile("bla.tar.lz4"), CompressorStreamFactory.LZ4_FRAMED, ArchiveStreamFactory.TAR);
+    }
+
+    @Ignore("Missing test file: bla.txt.bz2")
     @Test
     public void testTextBz2() throws OperationException {
-        detectType(stream("/bla.txt.bz2"), CompressorStreamFactory.BZIP2, null);
+        detectType(loadTestFile("bla.txt.bz2"), CompressorStreamFactory.BZIP2, null);
     }
 
+    @Ignore("Missing test file: bla.unix.arj")
     @Test
     public void testUnixArj() throws OperationException {
-        detectType(stream("/bla.unix.arj"), null, ArchiveStreamFactory.ARJ);
+        detectType(loadTestFile("bla.unix.arj"), null, ArchiveStreamFactory.ARJ);
     }
 
+    @Ignore("Missing test file: bla.xml.bz2")
     @Test
     public void testXmlBz2() throws OperationException {
-        detectType(stream("/bla.xml.bz2"), CompressorStreamFactory.BZIP2, null);
+        detectType(loadTestFile("bla.xml.bz2"), CompressorStreamFactory.BZIP2, null);
     }
 
+    @Ignore("Missing test file: bla.z.dump")
     @Test
     public void testZDump() throws OperationException {
-        detectType(stream("/bla.z.dump"), null, ArchiveStreamFactory.DUMP);
+        detectType(loadTestFile("bla.z.dump"), null, ArchiveStreamFactory.DUMP);
     }
-
 }

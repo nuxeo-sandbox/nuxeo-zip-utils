@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,19 +39,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
-import org.nuxeo.ecm.core.api.blobholder.SimpleBlobHolder;
-import org.nuxeo.ecm.core.api.impl.blob.URLBlob;
 
-// We don't have these files in the resources, not even in the git history of all commits...
-@Ignore
 public class TestArchive2HtmlConverter extends BaseConverterTest {
 
-    protected static BlobHolder getBlobFromURL(String url, String name) throws IOException {
-        URL loc = TestArchive2HtmlConverter.class.getResource(url);
-        Blob blob = new URLBlob(loc);
-        blob.setFilename(name);
-        return new SimpleBlobHolder(blob);
-    }
+    protected static final String TEST_ARCHIVES = "TestArchives/";
 
     @Test
     public void testTarConverter() throws Exception {
@@ -63,46 +53,52 @@ public class TestArchive2HtmlConverter extends BaseConverterTest {
     public void testTarGzConverter() throws Exception {
         testConvertToMimeType("application/gzip", "bla.tgz");
     }
-    
-    @Test
-    public void testTarLz4Converter() throws Exception {
-        testConvertToMimeType("application/x-lz4", "bla.tar.lz4");
-    }
-    
+
     @Test
     public void testTarXzConverter() throws Exception {
         testConvertToMimeType("application/x-xz", "bla.tar.xz");
     }
 
+    // --- Exotic formats: ignored until test archive files are provided in TestArchives/ ---
+
+    @Ignore("Missing test file: bla.tar.lz4")
+    @Test
+    public void testTarLz4Converter() throws Exception {
+        testConvertToMimeType("application/x-lz4", "bla.tar.lz4");
+    }
+
+    @Ignore("Missing test file: bla.jar")
     @Test
     public void testJarConverter() throws Exception {
         testConvertToMimeType("application/java-archive", "bla.jar");
     }
 
+    @Ignore("Missing test file: bla.cpio")
     @Test
     public void testCpioConverter() throws Exception {
         testConvertToMimeType("application/x-cpio", "bla.cpio");
     }
 
+    @Ignore("Missing test file: bla.arj")
     @Test
     public void testArjConverter() throws Exception {
         testConvertToMimeType("application/x-arj", "bla.arj");
     }
 
+    @Ignore("Missing test file: bla.7z — also not streamable")
     @Test
-    @Ignore("not streamable")
     public void testSevenZip() throws Exception {
         testConvertToMimeType("application/x-7z-compressed", "bla.7z");
     }
 
-    public void testConvertToMimeType(String mimeType, String name) throws IOException {
+    protected void testConvertToMimeType(String mimeType, String name) throws IOException {
         String converterName = cs.getConverterName(mimeType, "text/html");
         assertEquals("archive2html", converterName);
 
         checkConverterAvailability(converterName);
 
-        BlobHolder htmlBH = getBlobFromURL("/" + name, name);
-        htmlBH.getBlob().setMimeType(mimeType);
+        BlobHolder htmlBH = getBlobFromPath(TEST_ARCHIVES + name, mimeType);
+
         Map<String, Serializable> parameters = Collections.emptyMap();
 
         BlobHolder result = cs.convert(converterName, htmlBH, parameters);
@@ -130,9 +126,6 @@ public class TestArchive2HtmlConverter extends BaseConverterTest {
             content = FileUtils.readFileToString(file, Charset.defaultCharset());
             if (zipContent.containsKey(file.getName())) {
                 assertNotNull("No file entry for: " + filename, zipContent.get(file.getName()));
-                // assertEquals("Content does not match: " + filename, zipContent.get(file.getName()), content);
-                // assertTrue("File " + i + " does not contain " + filename + ": " + content,
-                // content.contains(zipContent.get(file.getName())));
                 zipContent.remove(file.getName());
             }
         }
