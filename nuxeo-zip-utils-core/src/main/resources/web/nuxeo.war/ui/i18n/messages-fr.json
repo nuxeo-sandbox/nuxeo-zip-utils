@@ -1,0 +1,10 @@
+{
+  "zipUtilsDisplay.loading": "Chargement du contenu de l'archive...",
+  "zipUtilsDisplay.empty": "L'archive est vide.",
+  "zipUtilsDisplay.noBlob": "Aucune archive trouvée au chemin indiqué.",
+  "zipUtilsDisplay.error": "Échec de la lecture de l'archive : {0}",
+  "zipUtilsDisplay.hideInvisible": "Masquer les éléments invisibles",
+  "zipUtilsDisplay.expandAll": "Tout déplier",
+  "zipUtilsDisplay.collapseAll": "Tout replier",
+  "zipUtilsDisplay.summary": "{0} dossier(s), {1} fichier(s)"
+}

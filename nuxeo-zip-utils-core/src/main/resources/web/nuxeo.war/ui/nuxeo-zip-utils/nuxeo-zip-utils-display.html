@@ -1,0 +1,560 @@
+<!--
+(C) Copyright 2025 Hyland (http://hyland.com/) and others.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Contributors:
+    Thibaud Arguillere
+-->
+
+<!--
+`nuxeo-zip-utils-display`
+
+Displays the content of a zip blob as a hierarchical, collapsible tree.
+
+Examples:
+
+    <!-- Default: blob at file:content, show invisibles -->
+    <nuxeo-zip-utils-display document="[[document]]"></nuxeo-zip-utils-display>
+
+    <!-- Custom xpath -->
+    <nuxeo-zip-utils-display document="[[document]]" xpath="blah:blih"></nuxeo-zip-utils-display>
+
+    <!-- List of blobs (e.g. files:files), pick the 4th (index 3) -->
+    <nuxeo-zip-utils-display document="[[document]]" xpath="files:files" blob-index="3"></nuxeo-zip-utils-display>
+
+    <!-- Hide entries whose basename starts with "." -->
+    <nuxeo-zip-utils-display document="[[document]]" hide-invisible></nuxeo-zip-utils-display>
+
+Note on `hide-invisible`: per Polymer convention, simply having the attribute means `true`.
+Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attribute.
+
+@group Nuxeo Zip Utils
+@element nuxeo-zip-utils-display
+-->
+
+<dom-module id="nuxeo-zip-utils-display">
+  <template>
+    <style include="nuxeo-styles">
+      :host {
+        display: block;
+      }
+
+      :host([hidden]) {
+        display: none !important;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .toolbar paper-checkbox {
+        --paper-checkbox-checked-color: var(--nuxeo-primary-color, #0066ff);
+      }
+
+      .toolbar .actions {
+        margin-left: auto;
+        display: flex;
+        gap: 4px;
+      }
+
+      .toolbar paper-button {
+        font-size: 12px;
+        text-transform: none;
+        padding: 4px 8px;
+        margin: 0;
+      }
+
+      .summary {
+        font-size: 12px;
+        color: var(--nuxeo-text-light, #939caa);
+        margin-bottom: 4px;
+      }
+
+      .tree {
+        max-height: 400px;
+        overflow-y: auto;
+        font-size: 13px;
+        background: var(--nuxeo-box, #fff);
+        border: 1px solid var(--nuxeo-border, #e3e3e3);
+        border-radius: 4px;
+        padding: 8px 12px;
+      }
+
+      .tree-line {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 0;
+        white-space: nowrap;
+      }
+
+      .tree-line .toggle {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        cursor: pointer;
+        color: var(--nuxeo-text-light, #939caa);
+      }
+
+      .tree-line .toggle.placeholder {
+        cursor: default;
+        visibility: hidden;
+      }
+
+      .tree-line iron-icon.entry-icon {
+        --iron-icon-height: 18px;
+        --iron-icon-width: 18px;
+        color: var(--nuxeo-text-light, #939caa);
+        flex-shrink: 0;
+      }
+
+      .tree-line.folder iron-icon.entry-icon {
+        color: var(--nuxeo-primary-color, #0066ff);
+      }
+
+      .tree-line.folder .name {
+        font-weight: 500;
+      }
+
+      .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .empty,
+      .loading,
+      .error,
+      .no-blob {
+        font-size: 13px;
+        color: var(--nuxeo-text-light, #939caa);
+        font-style: italic;
+        padding: 12px;
+      }
+
+      .error {
+        color: var(--nuxeo-warn-text, #d32f2f);
+        font-style: normal;
+      }
+    </style>
+
+    <nuxeo-operation id="entriesOp" op="ZipUtils.EntriesListReturn"></nuxeo-operation>
+
+    <template is="dom-if" if="[[_loading]]">
+      <div class="loading">[[i18n('zipUtilsDisplay.loading')]]</div>
+    </template>
+
+    <template is="dom-if" if="[[_errorMessage]]">
+      <div class="error">[[_errorMessage]]</div>
+    </template>
+
+    <template is="dom-if" if="[[_showNoBlob]]">
+      <div class="no-blob">[[i18n('zipUtilsDisplay.noBlob')]]</div>
+    </template>
+
+    <template is="dom-if" if="[[_showTree]]">
+      <div class="toolbar">
+        <paper-checkbox checked="{{hideInvisible}}">[[i18n('zipUtilsDisplay.hideInvisible')]]</paper-checkbox>
+        <div class="summary">[[_summaryLabel]]</div>
+        <div class="actions">
+          <paper-button on-tap="_expandAll">[[i18n('zipUtilsDisplay.expandAll')]]</paper-button>
+          <paper-button on-tap="_collapseAll">[[i18n('zipUtilsDisplay.collapseAll')]]</paper-button>
+        </div>
+      </div>
+
+      <template is="dom-if" if="[[_isEmpty]]">
+        <div class="empty">[[i18n('zipUtilsDisplay.empty')]]</div>
+      </template>
+
+      <template is="dom-if" if="[[!_isEmpty]]">
+        <div class="tree">
+          <template is="dom-repeat" items="[[_visibleLines]]" as="line">
+            <div class$="[[_lineClass(line.isFolder)]]"
+                 style$="padding-left: [[_indent(line.depth)]]px;">
+              <template is="dom-if" if="[[line.isFolder]]">
+                <iron-icon class="toggle"
+                           icon$="[[_toggleIcon(line.expanded)]]"
+                           on-tap="_onToggle"
+                           data-path$="[[line.path]]"></iron-icon>
+              </template>
+              <template is="dom-if" if="[[!line.isFolder]]">
+                <iron-icon class="toggle placeholder" icon="icons:chevron-right"></iron-icon>
+              </template>
+              <iron-icon class="entry-icon" icon$="[[_entryIcon(line.isFolder)]]"></iron-icon>
+              <span class="name">[[line.name]]</span>
+            </div>
+          </template>
+        </div>
+      </template>
+    </template>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'nuxeo-zip-utils-display',
+
+      behaviors: [Nuxeo.I18nBehavior],
+
+      properties: {
+        /** Document whose blob will be inspected. */
+        document: {
+          type: Object,
+          observer: '_inputsChanged'
+        },
+
+        /** Property path of the blob (or list of blobs). */
+        xpath: {
+          type: String,
+          value: 'file:content',
+          observer: '_inputsChanged'
+        },
+
+        /**
+         * 0-based index when `xpath` resolves to a list of blobs (e.g. `files:files`).
+         * Ignored for single-blob properties.
+         */
+        blobIndex: {
+          type: Number,
+          value: 0,
+          observer: '_inputsChanged'
+        },
+
+        /**
+         * When true, entries whose basename starts with "." are filtered out.
+         * Per Polymer convention, just having the attribute means true (even
+         * `hide-invisible="false"` is true). Omit the attribute for false.
+         */
+        hideInvisible: {
+          type: Boolean,
+          value: false,
+          observer: '_recomputeVisible'
+        },
+
+        /** All tree nodes in display order, regardless of expand state or filter. */
+        _allLines: {
+          type: Array,
+          value: function() { return []; }
+        },
+
+        /** Lines actually rendered (after expand-state and hideInvisible filtering). */
+        _visibleLines: {
+          type: Array,
+          value: function() { return []; }
+        },
+
+        /** Map of folder path -> expanded boolean. */
+        _expanded: {
+          type: Object,
+          value: function() { return {}; }
+        },
+
+        _loading: { type: Boolean, value: false },
+        _errorMessage: { type: String, value: '' },
+        _showNoBlob: { type: Boolean, value: false },
+        _showTree: { type: Boolean, value: false },
+        _isEmpty: { type: Boolean, value: false },
+        _summaryLabel: { type: String, value: '' },
+        _folderCount: { type: Number, value: 0 },
+        _fileCount: { type: Number, value: 0 }
+      },
+
+      attached: function() {
+        this._inputsChanged();
+      },
+
+      _inputsChanged: function() {
+        if (!this.document) {
+          this._reset();
+          return;
+        }
+        this._fetch();
+      },
+
+      _reset: function() {
+        this._allLines = [];
+        this._visibleLines = [];
+        this._expanded = {};
+        this._loading = false;
+        this._errorMessage = '';
+        this._showNoBlob = false;
+        this._showTree = false;
+        this._isEmpty = false;
+        this._summaryLabel = '';
+      },
+
+      _fetch: function() {
+        var self = this;
+        this._reset();
+        this._loading = true;
+
+        var op = this.$.entriesOp;
+        if (!this.document || !this.document.uid) {
+          this._loading = false;
+          this._showNoBlob = true;
+          return;
+        }
+        op.input = 'doc:' + this.document.uid;
+        op.params = {
+          xpath: this.xpath,
+          blobIndex: this.blobIndex == null ? 0 : this.blobIndex
+        };
+
+        op.execute().then(function(blob) {
+          self._loading = false;
+          if (!blob) {
+            self._showNoBlob = true;
+            return;
+          }
+          if (typeof blob.text === 'function') {
+            blob.text().then(function(text) { self._buildTree(text); });
+          } else if (typeof Blob !== 'undefined' && blob instanceof Blob) {
+            var reader = new FileReader();
+            reader.onload = function() { self._buildTree(reader.result); };
+            reader.readAsText(blob);
+          } else if (typeof blob === 'string') {
+            self._buildTree(blob);
+          } else {
+            self._buildTree('');
+          }
+        }).catch(function(err) {
+          self._loading = false;
+          self._handleError(err);
+        });
+      },
+
+      _handleError: function(err) {
+        var msg;
+        if (err && err.message) {
+          msg = err.message;
+        } else if (typeof err === 'string') {
+          msg = err;
+        } else {
+          msg = 'unknown error';
+        }
+        // 404 / no blob => friendlier message
+        if (err && (err.status === 404 || /no.*blob/i.test(msg))) {
+          this._showNoBlob = true;
+          return;
+        }
+        this._errorMessage = this.i18n('zipUtilsDisplay.error', msg);
+      },
+
+      /**
+       * Build the tree from the newline-separated entry list returned by
+       * `ZipUtils.EntriesListReturn`.
+       */
+      _buildTree: function(text) {
+        var lines = (text || '').split('\n').map(function(s) { return s.trim(); })
+          .filter(function(s) { return s.length > 0; });
+
+        if (lines.length === 0) {
+          this._showTree = true;
+          this._isEmpty = true;
+          this._allLines = [];
+          this._recomputeVisible();
+          return;
+        }
+
+        // Build a tree of nodes keyed by path.
+        var root = { name: '', path: '', isFolder: true, children: {}, depth: -1 };
+
+        lines.forEach(function(entry) {
+          var isFolder = entry.charAt(entry.length - 1) === '/';
+          var clean = isFolder ? entry.substring(0, entry.length - 1) : entry;
+          var parts = clean.split('/').filter(function(p) { return p.length > 0; });
+          var node = root;
+          var pathSoFar = '';
+          parts.forEach(function(part, i) {
+            pathSoFar = pathSoFar ? pathSoFar + '/' + part : part;
+            var isLast = i === parts.length - 1;
+            var childIsFolder = isLast ? isFolder : true;
+            if (!node.children[part]) {
+              node.children[part] = {
+                name: part,
+                path: pathSoFar,
+                isFolder: childIsFolder,
+                children: {},
+                depth: i
+              };
+            } else if (childIsFolder) {
+              // Promote to folder if a deeper entry implies it.
+              node.children[part].isFolder = true;
+            }
+            node = node.children[part];
+          });
+        });
+
+        // Flatten depth-first, folders sorted before files within each level.
+        var allLines = [];
+        var folderCount = 0;
+        var fileCount = 0;
+
+        function walk(node) {
+          var keys = Object.keys(node.children).sort(function(a, b) {
+            var ca = node.children[a];
+            var cb = node.children[b];
+            if (ca.isFolder !== cb.isFolder) {
+              return ca.isFolder ? -1 : 1;
+            }
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+          });
+          keys.forEach(function(k) {
+            var child = node.children[k];
+            if (child.isFolder) {
+              folderCount++;
+            } else {
+              fileCount++;
+            }
+            allLines.push({
+              name: child.name,
+              path: child.path,
+              depth: child.depth,
+              isFolder: child.isFolder,
+              parentPath: node.path
+            });
+            if (child.isFolder) {
+              walk(child);
+            }
+          });
+        }
+        walk(root);
+
+        this._folderCount = folderCount;
+        this._fileCount = fileCount;
+        this._summaryLabel = this.i18n('zipUtilsDisplay.summary',
+          folderCount.toString(), fileCount.toString());
+
+        // Initialize expand state: all collapsed except top-level folders.
+        var expanded = {};
+        allLines.forEach(function(l) {
+          if (l.isFolder) {
+            expanded[l.path] = (l.depth === 0);
+          }
+        });
+        this._expanded = expanded;
+        this._allLines = allLines;
+        this._showTree = true;
+        this._isEmpty = false;
+        this._recomputeVisible();
+      },
+
+      _recomputeVisible: function() {
+        if (!this._allLines || this._allLines.length === 0) {
+          this._visibleLines = [];
+          return;
+        }
+        var hide = !!this.hideInvisible;
+        var expanded = this._expanded || {};
+        var visible = [];
+        this._allLines.forEach(function(line) {
+          if (hide && _hasHiddenSegment(line.path)) {
+            return;
+          }
+          if (line.parentPath && !_ancestorsExpanded(line.parentPath, expanded)) {
+            return;
+          }
+          // Decorate with current expanded state for folders.
+          var copy = {
+            name: line.name,
+            path: line.path,
+            depth: line.depth,
+            isFolder: line.isFolder,
+            expanded: line.isFolder ? !!expanded[line.path] : false
+          };
+          visible.push(copy);
+        });
+        this._visibleLines = visible;
+      },
+
+      _onToggle: function(e) {
+        var path = e.currentTarget.getAttribute('data-path');
+        if (!path) {
+          return;
+        }
+        var expanded = Object.assign({}, this._expanded);
+        expanded[path] = !expanded[path];
+        this._expanded = expanded;
+        this._recomputeVisible();
+      },
+
+      _expandAll: function() {
+        var expanded = {};
+        this._allLines.forEach(function(l) {
+          if (l.isFolder) {
+            expanded[l.path] = true;
+          }
+        });
+        this._expanded = expanded;
+        this._recomputeVisible();
+      },
+
+      _collapseAll: function() {
+        var expanded = {};
+        this._allLines.forEach(function(l) {
+          if (l.isFolder) {
+            expanded[l.path] = false;
+          }
+        });
+        this._expanded = expanded;
+        this._recomputeVisible();
+      },
+
+      _indent: function(depth) {
+        return depth * 16;
+      },
+
+      _toggleIcon: function(expanded) {
+        return expanded ? 'icons:expand-more' : 'icons:chevron-right';
+      },
+
+      _entryIcon: function(isFolder) {
+        return isFolder ? 'icons:folder' : 'editor:insert-drive-file';
+      },
+
+      _lineClass: function(isFolder) {
+        return isFolder ? 'tree-line folder' : 'tree-line file';
+      }
+    });
+
+    // --- helpers (file-scope, not on the prototype) ---
+
+    function _hasHiddenSegment(path) {
+      var parts = path.split('/');
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].length > 0 && parts[i].charAt(0) === '.') {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function _ancestorsExpanded(parentPath, expanded) {
+      if (!parentPath) {
+        return true;
+      }
+      var parts = parentPath.split('/');
+      var acc = '';
+      for (var i = 0; i < parts.length; i++) {
+        acc = acc ? acc + '/' + parts[i] : parts[i];
+        if (!expanded[acc]) {
+          return false;
+        }
+      }
+      return true;
+    }
+  </script>
+</dom-module>

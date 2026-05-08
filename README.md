@@ -85,6 +85,24 @@ function run(input, params) {
 * Return info about the zip in Context Variables: `zipInfo_comment`, `zipInfo_countFiles` (int), `zipInfo_countDirectories` (int)
 
 
+## Files > `Archive.DetectType`
+* Input is `Document` or `Blob`
+* Detects the archive format (and outer compression, if any) of generic archives via Apache Commons Compress (zip, tar, 7z, ar, arj, cpio, dump, jar, plus compressors gz/bz2/xz/zstd/lz4/…)
+* Parameters:
+  * `xpath` (optional): if input is a Document, this is the field that contains the archive (default `file:content`)
+  * `updateMimeType` (optional, default `false`): when `true` and input is a Document, adds the `archive` facet and stores the detected types in `archive:encoding` (compressor) and `archive:type` (archive). _Note: requires the `archive` facet/schema to be registered — see `OSGI-INF/CoreExtensions.xml`, currently disabled._
+  * `save` (optional, default `false`): save the document after `updateMimeType`
+* Sets context variables `archive_type` (e.g. `zip`, `tar`, `7z`) and `compress_type` (e.g. `gzip`, `xz`, `zstd`); either may be absent
+* When input is a Blob, returns the same blob with its mime type updated (if recognized); when input is a Document, returns the document
+
+
+## Files > `Archive.GetEntry`
+* Input is `Document` or `Blob`
+* Generic-archive equivalent of `ZipUtils.GetFile`: returns the entry's content as a Blob, for any format Apache Commons Compress can read (tar, 7z, etc.) — not just zip
+* Parameters: `xpath` ("file:content" by default) and `entryName` (required, exact full path inside the archive)
+* Returns the corresponding Blob, or `null` if the entry does not exist or is a folder
+
+
 # Build and Install
 
 Build with maven (at least 3.3)

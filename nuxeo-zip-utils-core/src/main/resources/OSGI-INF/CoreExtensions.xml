@@ -1,6 +1,27 @@
 <?xml version="1.0"?>
+<!--
+  This component declared an "Archive" doctype with an "archive" facet/schema,
+  apparently intended for downstream use alongside the Archive.DetectType /
+  Archive.GetEntry operations and the Archive2HtmlConverter.
+
+  As of 2025.2 it is NOT referenced anywhere in this plugin:
+    - no Java class reads or writes archive:encoding / archive:type
+    - no Java code creates "Archive" documents
+    - no other OSGI-INF contribution references the schema, facet, or doctype
+    - no test deploys or asserts them
+    - the README does not mention them
+
+  Disabled to avoid contributing an unused doctype/schema to the platform.
+  If a user reports a regression (e.g. external code that relies on the
+  "Archive" doctype existing), uncomment the <extension> blocks below.
+  The XSD at src/main/resources/schema/archive.xsd is intentionally kept
+  in place so re-enabling is a single edit.
+
+  @since 2025.2 (disabled)
+-->
 <component name="org.nuxeo.utils.archive.model" version="1.0">
 
+  <!--
   <extension target="org.nuxeo.ecm.core.schema.TypeService" point="schema">
     <schema name="archive" prefix="archive" src="schema/archive.xsd"/>
   </extension>
@@ -14,5 +35,6 @@
       <facet name="archive"/>
     </doctype>
   </extension>
+  -->
 
 </component>
