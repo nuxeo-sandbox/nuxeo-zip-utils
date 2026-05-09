@@ -215,6 +215,11 @@ nuxeoctl mp-install nuxeo-zip-utils
 ```
 
 
+## TODO
+
+* Display a `<nuxeo-document-blob>` element below `<nuxeo-zip-utils-display>` so users can see the blob size, download/replace the current blob, etc.
+
+
 ## Support
 
 **These features are not part of the Nuxeo Production platform.**
