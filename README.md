@@ -17,6 +17,9 @@ Utilities for dealing with archives (zip, tar, rar, etc.) and displaying the con
 
 * **`<nuxeo-zip-utils-display>`**: collapsible tree view of a zip blob's contents, with optional hiding of OS-junk entries (`__MACOSX`, `Thumbs.db`, etc.) and user-defined names.
 
+<img src="README-Images/01-DisplayZip.png" alt="Display zip content" width="500">
+
+
 ## Operations
 
 
