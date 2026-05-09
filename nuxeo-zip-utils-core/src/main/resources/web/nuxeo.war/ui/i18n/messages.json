@@ -2,6 +2,7 @@
   "zipUtilsDisplay.loading": "Loading archive contents...",
   "zipUtilsDisplay.empty": "The archive is empty.",
   "zipUtilsDisplay.noBlob": "No archive found at the given path.",
+  "zipUtilsDisplay.notZip": "Not a zip archive.",
   "zipUtilsDisplay.error": "Failed to read the archive: {0}",
   "zipUtilsDisplay.hideInvisible": "Hide invisible items",
   "zipUtilsDisplay.expandAll": "Expand all",

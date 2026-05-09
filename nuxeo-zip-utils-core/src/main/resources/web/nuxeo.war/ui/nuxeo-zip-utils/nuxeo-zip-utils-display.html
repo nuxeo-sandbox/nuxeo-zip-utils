@@ -33,8 +33,15 @@ Examples:
     <!-- List of blobs (e.g. files:files), pick the 4th (index 3) -->
     <nuxeo-zip-utils-display document="[[document]]" xpath="files:files" blob-index="3"></nuxeo-zip-utils-display>
 
-    <!-- Hide entries whose basename starts with "." -->
+    <!-- Hide entries whose basename starts with "." or matches a known
+         OS-junk name (__MACOSX, Thumbs.db, Desktop.ini, $RECYCLE.BIN,
+         System Volume Information, ehthumbs.db, ehthumbs_vista.db, Icon\r). -->
     <nuxeo-zip-utils-display document="[[document]]" hide-invisible></nuxeo-zip-utils-display>
+
+    <!-- Hide additional names on top of the built-in list (comma-separated,
+         case-insensitive, exact match against any path segment). -->
+    <nuxeo-zip-utils-display document="[[document]]" hide-invisible
+        extra-hidden-names="readme.txt,_metadata"></nuxeo-zip-utils-display>
 
 Note on `hide-invisible`: per Polymer convention, simply having the attribute means `true`.
 Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attribute.
@@ -64,12 +71,15 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
 
       .toolbar paper-checkbox {
         --paper-checkbox-checked-color: var(--nuxeo-primary-color, #0066ff);
+        /* nudge the checkbox label to share the row's text baseline */
+        position: relative;
+        top: -3px;
       }
 
       .toolbar .actions {
         margin-left: auto;
         display: flex;
-        gap: 4px;
+        gap: 25px;
       }
 
       .toolbar paper-button {
@@ -166,13 +176,17 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
       <div class="no-blob">[[i18n('zipUtilsDisplay.noBlob')]]</div>
     </template>
 
+    <template is="dom-if" if="[[_showNotZip]]">
+      <div class="no-blob">[[i18n('zipUtilsDisplay.notZip')]]</div>
+    </template>
+
     <template is="dom-if" if="[[_showTree]]">
       <div class="toolbar">
         <paper-checkbox checked="{{hideInvisible}}">[[i18n('zipUtilsDisplay.hideInvisible')]]</paper-checkbox>
         <div class="summary">[[_summaryLabel]]</div>
         <div class="actions">
-          <paper-button on-tap="_expandAll">[[i18n('zipUtilsDisplay.expandAll')]]</paper-button>
-          <paper-button on-tap="_collapseAll">[[i18n('zipUtilsDisplay.collapseAll')]]</paper-button>
+          <paper-button class="secondary" on-tap="_expandAll">[[i18n('zipUtilsDisplay.expandAll')]]</paper-button>
+          <paper-button class="secondary" on-tap="_collapseAll">[[i18n('zipUtilsDisplay.collapseAll')]]</paper-button>
         </div>
       </div>
 
@@ -212,15 +226,13 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
       properties: {
         /** Document whose blob will be inspected. */
         document: {
-          type: Object,
-          observer: '_inputsChanged'
+          type: Object
         },
 
         /** Property path of the blob (or list of blobs). */
         xpath: {
           type: String,
-          value: 'file:content',
-          observer: '_inputsChanged'
+          value: 'file:content'
         },
 
         /**
@@ -229,8 +241,7 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
          */
         blobIndex: {
           type: Number,
-          value: 0,
-          observer: '_inputsChanged'
+          value: 0
         },
 
         /**
@@ -241,6 +252,18 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         hideInvisible: {
           type: Boolean,
           value: false,
+          observer: '_recomputeVisible'
+        },
+
+        /**
+         * Comma-separated list of additional path-segment names to hide when
+         * `hide-invisible` is set. Matched case-insensitively against each
+         * segment of the entry path (exact match, not substring).
+         * Added on top of the built-in OS-junk list.
+         */
+        extraHiddenNames: {
+          type: String,
+          value: '',
           observer: '_recomputeVisible'
         },
 
@@ -265,16 +288,19 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         _loading: { type: Boolean, value: false },
         _errorMessage: { type: String, value: '' },
         _showNoBlob: { type: Boolean, value: false },
+        _showNotZip: { type: Boolean, value: false },
         _showTree: { type: Boolean, value: false },
         _isEmpty: { type: Boolean, value: false },
         _summaryLabel: { type: String, value: '' },
         _folderCount: { type: Number, value: 0 },
-        _fileCount: { type: Number, value: 0 }
+        _fileCount: { type: Number, value: 0 },
+        /** Monotonic request id; late callbacks from superseded requests bail out. */
+        _fetchSeq: { type: Number, value: 0 }
       },
 
-      attached: function() {
-        this._inputsChanged();
-      },
+      observers: [
+        '_inputsChanged(document, xpath, blobIndex)'
+      ],
 
       _inputsChanged: function() {
         if (!this.document) {
@@ -291,6 +317,7 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         this._loading = false;
         this._errorMessage = '';
         this._showNoBlob = false;
+        this._showNotZip = false;
         this._showTree = false;
         this._isEmpty = false;
         this._summaryLabel = '';
@@ -301,29 +328,60 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         this._reset();
         this._loading = true;
 
-        var op = this.$.entriesOp;
         if (!this.document || !this.document.uid) {
           this._loading = false;
           this._showNoBlob = true;
           return;
         }
+
+        // Local guardrail: rely on the parent layout keeping document.properties
+        // in sync. Only call the server when we know the blob is a zip.
+        var prop = (this.document.properties || {})[this.xpath];
+        var blob;
+        if (Array.isArray(prop)) {
+          var idx = this.blobIndex == null ? 0 : this.blobIndex;
+          blob = (idx >= 0 && idx < prop.length) ? prop[idx] : null;
+        } else {
+          blob = prop;
+        }
+        if (!blob) {
+          this._loading = false;
+          this._showNoBlob = true;
+          return;
+        }
+        if (blob['mime-type'] !== 'application/zip') {
+          this._loading = false;
+          this._showNotZip = true;
+          return;
+        }
+
+        var op = this.$.entriesOp;
         op.input = 'doc:' + this.document.uid;
         op.params = {
           xpath: this.xpath,
           blobIndex: this.blobIndex == null ? 0 : this.blobIndex
         };
 
+        var seq = ++this._fetchSeq;
+
         op.execute().then(function(blob) {
+          if (seq !== self._fetchSeq) return;
           self._loading = false;
           if (!blob) {
             self._showNoBlob = true;
             return;
           }
           if (typeof blob.text === 'function') {
-            blob.text().then(function(text) { self._buildTree(text); });
+            blob.text().then(function(text) {
+              if (seq !== self._fetchSeq) return;
+              self._buildTree(text);
+            });
           } else if (typeof Blob !== 'undefined' && blob instanceof Blob) {
             var reader = new FileReader();
-            reader.onload = function() { self._buildTree(reader.result); };
+            reader.onload = function() {
+              if (seq !== self._fetchSeq) return;
+              self._buildTree(reader.result);
+            };
             reader.readAsText(blob);
           } else if (typeof blob === 'string') {
             self._buildTree(blob);
@@ -331,12 +389,18 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
             self._buildTree('');
           }
         }).catch(function(err) {
+          if (seq !== self._fetchSeq) return;
           self._loading = false;
           self._handleError(err);
         });
       },
 
       _handleError: function(err) {
+        // Superseded / detached request — not a real error, do not display.
+        if (err && (err.name === 'AbortError'
+                    || /signal is aborted/i.test(err.message || ''))) {
+          return;
+        }
         var msg;
         if (err && err.message) {
           msg = err.message;
@@ -459,9 +523,10 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         }
         var hide = !!this.hideInvisible;
         var expanded = this._expanded || {};
+        var extra = _parseExtraHidden(this.extraHiddenNames);
         var visible = [];
         this._allLines.forEach(function(line) {
-          if (hide && _hasHiddenSegment(line.path)) {
+          if (hide && _hasHiddenSegment(line.path, extra)) {
             return;
           }
           if (line.parentPath && !_ancestorsExpanded(line.parentPath, expanded)) {
@@ -532,10 +597,54 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
 
     // --- helpers (file-scope, not on the prototype) ---
 
-    function _hasHiddenSegment(path) {
+    // Built-in OS-junk names (lower-cased, exact match per path segment).
+    // Mac noise starting with "." (.DS_Store, .Spotlight-V100, .Trashes,
+    // .fseventsd, .AppleDouble, ._*) is already covered by the dot rule.
+    var _BUILTIN_HIDDEN = {
+      '__macosx': true,                    // Mac resource-fork sidecar folder
+      'thumbs.db': true,                   // Windows folder thumbnail cache
+      'ehthumbs.db': true,                 // Windows Media Center cache
+      'ehthumbs_vista.db': true,           // Windows Media Center cache (Vista)
+      'desktop.ini': true,                 // Windows folder metadata
+      '$recycle.bin': true,                // Windows recycle bin (drive root)
+      'system volume information': true    // Windows NTFS metadata (drive root)
+    };
+
+    function _parseExtraHidden(raw) {
+      if (!raw || typeof raw !== 'string') {
+        return null;
+      }
+      var map = {};
+      var any = false;
+      raw.split(',').forEach(function(s) {
+        var t = s.trim().toLowerCase();
+        if (t.length > 0) {
+          map[t] = true;
+          any = true;
+        }
+      });
+      return any ? map : null;
+    }
+
+    function _hasHiddenSegment(path, extra) {
       var parts = path.split('/');
       for (var i = 0; i < parts.length; i++) {
-        if (parts[i].length > 0 && parts[i].charAt(0) === '.') {
+        var p = parts[i];
+        if (p.length === 0) {
+          continue;
+        }
+        if (p.charAt(0) === '.') {
+          return true;
+        }
+        // Mac custom-folder-icon file: literal "Icon" + CR.
+        if (p === 'Icon\r') {
+          return true;
+        }
+        var lower = p.toLowerCase();
+        if (_BUILTIN_HIDDEN[lower]) {
+          return true;
+        }
+        if (extra && extra[lower]) {
           return true;
         }
       }

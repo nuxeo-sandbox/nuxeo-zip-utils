@@ -1,13 +1,29 @@
-# About
+# nuxeo-zip-utils
+
+> [!IMPORTANT]
+> Released version for Nuxeo LTS 2025 is 2025.1.0, available on [Nuxeo Marketplace](https://connect.nuxeo.com/nuxeo/site/marketplace/package/nuxeo-zip-utils).
+> Current version (2025.2.0-SNAPSHOT) is work in progress: Using GitHub as backup. DO not build/deploy this SNAPSHOT
 
 [![Build Status](https://qa.nuxeo.org/jenkins/buildStatus/icon?job=Sandbox/sandbox_nuxeo-zip-utils-master)](https://qa.nuxeo.org/jenkins/job/Sandbox/job/sandbox_nuxeo-zip-utils-master/)
 
-Utilities for dealing with archives (zip, tar, rar, etc.) in Nuxeo.
+Utilities for dealing with archives (zip, tar, rar, etc.) and displaying the content of a .zip in Nuxeo.
 
-# Operations
+## Description
+
+### Automation operations:
+
+* **Zip-only** (`ZipUtils.*`): test if a blob is a zip (`IsZip`), list entries (`EntriesList`, `EntriesListReturn`), get entry metadata (`EntryInfo`, `ZipInfo`), extract a single file (`GetFile`), import a zip as a Document tree (`UnzipToDocumentsOp`), zip a Folderish recursively (`ZipFolderishOp`).
+* **Generic archive** (`Archive.*`, via Apache Commons Compress — zip, tar, 7z, ar, jar, plus gz/bz2/xz/zstd/lz4/...): detect format and outer compression (`DetectType`), get a single entry's content (`GetEntry`).
+
+### Web UI element:
+
+* **`<nuxeo-zip-utils-display>`**: collapsible tree view of a zip blob's contents, with optional hiding of OS-junk entries (`__MACOSX`, `Thumbs.db`, etc.) and user-defined names.
+
+## Operations
 
 
-## Files > `ZipUtils.IsZip`
+### Files > `ZipUtils.IsZip`
+
 * Input is `Document` or `Blob`
 * Parameter: `xpath` ("file:content" by default)
 * Return the input unchanged
@@ -29,27 +45,30 @@ function run(input, params) {
 }
 ```
 
-## Files > `ZipUtils.EntriesList`
+### Files > `ZipUtils.EntriesList`
+
 * Input is `Document` or `Blob`
 * Parameter: `xpath` ("file:content" by default)
 * Return the input unchanged
 * Set the `zipInfo_entriesList` String Context Variable to the full list of all entries (one/line)
 
 
-## Files > `ZipUtils.EntryInfo`
+### Files > `ZipUtils.EntryInfo`
+
 * Input is `Document` or `Blob`
 * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
 * Return the input unchanged
 * Set several context int/long variables: `zipInfo_compressedSize`, `zipInfo_originalSize`, `zipInfo_crc`, and `zipInfo_method` (0 = stored, 8 =  compressed)
 
 
-## Files > `ZipUtils.GetFile`
+### Files > `ZipUtils.GetFile`
 * Input is `Document` or `Blob`
 * Parameters: `xpath` ("file:content" by default) and `entryName` (exact full path in the zip)
 * Returns the corresponding file. Return null if the entry does not exist or is a folder
 
 
-## Files > `ZipUtils.UnzipToDocumentsOp`
+### Files > `ZipUtils.UnzipToDocumentsOp`
+
 * Input is `Document` or `Blob`
 * Extracts an archive and imports the files as Documents, creating the same structure.
 * _Note that in all cases the operation creates a root Document at the `target`, it doesn't unzip to the target._
@@ -67,7 +86,8 @@ function run(input, params) {
 * Returns the created root Folderish Document.
 
 
-## Files > `ZipUtils.ZipFolderishOp`
+### Files > `ZipUtils.ZipFolderishOp`
+
 * Input is a Folderish document
 * Zip all the content recursively, with the hierarchy. Ignore non-folderish documents that have no blobs
 * Returns the Zipped content
@@ -78,14 +98,16 @@ function run(input, params) {
   * `doNotCreateMainFolder` (optionl): When `true` the zip archive TOC will not start with the name of the main folder.
 
 
-## Files > `ZipUtils.ZipInfo`
+### Files > `ZipUtils.ZipInfo`
+
 * Input is `Document` or `Blob`
 * Returns the input unchanged
 * Parameter: `xpath`, optional ("file:content" by default)
 * Return info about the zip in Context Variables: `zipInfo_comment`, `zipInfo_countFiles` (int), `zipInfo_countDirectories` (int)
 
 
-## Files > `Archive.DetectType`
+### Files > `Archive.DetectType`
+
 * Input is `Document` or `Blob`
 * Detects the archive format (and outer compression, if any) of generic archives via Apache Commons Compress (zip, tar, 7z, ar, arj, cpio, dump, jar, plus compressors gz/bz2/xz/zstd/lz4/…)
 * Parameters:
@@ -96,43 +118,120 @@ function run(input, params) {
 * When input is a Blob, returns the same blob with its mime type updated (if recognized); when input is a Document, returns the document
 
 
-## Files > `Archive.GetEntry`
+### Files > `Archive.GetEntry`
+
 * Input is `Document` or `Blob`
 * Generic-archive equivalent of `ZipUtils.GetFile`: returns the entry's content as a Blob, for any format Apache Commons Compress can read (tar, 7z, etc.) — not just zip
 * Parameters: `xpath` ("file:content" by default) and `entryName` (required, exact full path inside the archive)
 * Returns the corresponding Blob, or `null` if the entry does not exist or is a folder
 
 
-# Build and Install
+## Web UI Element
 
-Build with maven (at least 3.3)
+### `<nuxeo-zip-utils-display>`
 
+Polymer element that displays the content of a zip blob as a hierarchical, collapsible tree. Reads the entries via the `ZipUtils.EntriesListReturn` operation.
+
+The element relies on the parent layout to keep `document.properties` up to date. It inspects the blob's `mime-type` locally before calling the server:
+* If `mime-type === "application/zip"` → fetches the entries and displays the tree (1 server call).
+* If the blob is missing → displays "No archive found at the given path." (no server call).
+* If the blob has any other `mime-type` → displays "Not a zip archive." (no server call).
+
+It is the developer's responsibility to mount the element only where it makes sense. A common pattern is to wrap it in a `dom-if` and fall back to another viewer when the document does not carry a zip:
+
+```html
+<template is="dom-if" if="[[_looksLikeZip(document)]]">
+  <nuxeo-zip-utils-display role="widget" document="[[document]]" hide-invisible></nuxeo-zip-utils-display>
+</template>
+<template is="dom-if" if="[[!_looksLikeZip(document)]]">
+  <nuxeo-document-viewer role="widget" document="[[document]]"></nuxeo-document-viewer>
+</template>
 ```
-cd /path/to/nuxeo-zip-utils
+
+Attributes:
+* `document` (required): the document whose blob will be inspected
+* `xpath` (optional, default `file:content`): property path of the blob (or list of blobs)
+* `blob-index` (optional, default `0`): 0-based index when `xpath` resolves to a list of blobs (e.g. `files:files`); ignored for single-blob properties
+* `hide-invisible` (optional): when present, hides entries whose basename starts with `.` and entries matching the built-in OS-junk list. Per Polymer convention, just having the attribute means `true` (even `hide-invisible="false"` is `true`); omit the attribute for `false`.
+* `extra-hidden-names` (optional): comma-separated list of additional path-segment names to hide when `hide-invisible` is set. Matched case-insensitively, exact match against any segment of the entry path. Added on top of the built-in list.
+
+Built-in hidden names (when `hide-invisible` is set):
+* Anything starting with `.` (covers Mac `.DS_Store`, `.Spotlight-V100`, `.Trashes`, `.fseventsd`, `.AppleDouble`, AppleDouble forks `._*`, etc.)
+* `__MACOSX` (Mac resource-fork sidecar folder)
+* `Thumbs.db`, `ehthumbs.db`, `ehthumbs_vista.db` (Windows thumbnail caches)
+* `Desktop.ini` (Windows folder metadata)
+* `$RECYCLE.BIN`, `System Volume Information` (Windows, when zipping a drive root)
+* `Icon\r` (Mac custom folder icon file)
+
+Examples:
+
+```html
+<!-- Default: blob at file:content -->
+<nuxeo-zip-utils-display document="[[document]]"></nuxeo-zip-utils-display>
+
+<!-- Custom xpath, hide OS junk -->
+<nuxeo-zip-utils-display document="[[document]]"
+    xpath="blah:blih" hide-invisible></nuxeo-zip-utils-display>
+
+<!-- List of blobs (e.g. files:files), pick the 4th (index 3) -->
+<nuxeo-zip-utils-display document="[[document]]"
+    xpath="files:files" blob-index="3"></nuxeo-zip-utils-display>
+
+<!-- Hide built-in junk plus a few extra names -->
+<nuxeo-zip-utils-display document="[[document]]" hide-invisible
+    extra-hidden-names="readme.txt,_metadata"></nuxeo-zip-utils-display>
+```
+
+
+## Deploy / Build and Deploy
+
+### Build and Deploy Locally
+
+```bash
+git clone https://github.com/nuxeo-sandbox/nuxeo-zip-utils
+cd nuxeo-zip-utils
 mvn clean install
-# _> the package is in nuxeo-zip-utils-package/target
 ```
 
-# Support
+To skip unit testing, add `-DskipTests`.
+
+The Marketplace package is generated at:
+```
+nuxeo-zip-utils-package/target/nuxeo-zip-utils-package-{VERSION}}-*.zip
+```
+
+Install it via `nuxeoctl`:
+```bash
+nuxeoctl mp-install nuxeo-zip-utils-package-{VERSION}.zip
+```
+
+### Deploy from Nuxeo Marketplace
+
+This plugin is available as a package on the [Nuxeo Marketplace](https://connect.nuxeo.com/nuxeo/site/marketplace/package/nuxeo-zip-utils), you can just:
+
+```bash
+nuxeoctl mp-install nuxeo-zip-utils
+```
+
+
+## Support
 
 **These features are not part of the Nuxeo Production platform.**
 
 These solutions are provided for inspiration and we encourage customers to use them as code samples and learning resources.
 
-This is a moving project (no API maintenance, no deprecation process, etc.) If any of these solutions are found to be useful for the Nuxeo Platform in general, they will be integrated directly into platform, not maintained here.
+This is a moving project (no API maintenance, no deprecation process, etc.) If any of these solutions are found to be useful for the Nuxeo Platform in general, they will be integrated directly into the platform, not maintained here.
 
-# License
+## License
 
 [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-# About Nuxeo
+## About Nuxeo
 
-Nuxeo Platform is an open source Content Services platform, written in Java. Data can be stored in both SQL & NoSQL databases.
+Nuxeo Platform is an open source highly scalable, cloud-native, enterprise content management product with rich multimedia support, written in Java. Data can be stored in both SQL & NoSQL databases.
 
 The development of the Nuxeo Platform is mostly done by Nuxeo employees with an open development model.
 
 The source code, documentation, roadmap, issue tracker, testing, benchmarks are all public.
 
-Typically, Nuxeo users build different types of information management solutions for [document management](https://www.nuxeo.com/solutions/document-management/), [case management](https://www.nuxeo.com/solutions/case-management/), and [digital asset management](https://www.nuxeo.com/solutions/dam-digital-asset-management/), use cases. It uses schema-flexible metadata & content models that allows content to be repurposed to fulfill future use cases.
-
-More information is available at [www.nuxeo.com](https://www.nuxeo.com).
+More information is available at [Hyland/Nuxeo](https://www.hyland.com/en/solutions/products/nuxeo-platform).

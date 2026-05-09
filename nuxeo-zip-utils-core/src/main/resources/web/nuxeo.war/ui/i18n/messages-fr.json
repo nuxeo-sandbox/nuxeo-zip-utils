@@ -2,6 +2,7 @@
   "zipUtilsDisplay.loading": "Chargement du contenu de l'archive...",
   "zipUtilsDisplay.empty": "L'archive est vide.",
   "zipUtilsDisplay.noBlob": "Aucune archive trouvée au chemin indiqué.",
+  "zipUtilsDisplay.notZip": "Ce fichier n'est pas une archive zip.",
   "zipUtilsDisplay.error": "Échec de la lecture de l'archive : {0}",
   "zipUtilsDisplay.hideInvisible": "Masquer les éléments invisibles",
   "zipUtilsDisplay.expandAll": "Tout déplier",
