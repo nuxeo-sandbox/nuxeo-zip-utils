@@ -15,7 +15,7 @@ Utilities for dealing with archives (zip, tar, rar, etc.) and displaying the con
 
 ### Web UI element:
 
-* **`<nuxeo-zip-utils-display>`**: collapsible tree view of a zip blob's contents, with optional hiding of OS-junk entries (`__MACOSX`, `Thumbs.db`, etc.) and user-defined names.
+* **`<nuxeo-zip-utils-display>`**: collapsible tree view of a zip blob's contents, with optional hiding of OS-junk entries (`__MACOSX`, `Thumbs.db`, etc.) and user-defined names. Displays `file:content` by default, but can display any blob holding a zip.
 
 <img src="README-Images/01-DisplayZip.png" alt="Display zip content" width="500">
 
@@ -152,6 +152,8 @@ It is the developer's responsibility to mount the element only where it makes se
   <nuxeo-document-viewer role="widget" document="[[document]]"></nuxeo-document-viewer>
 </template>
 ```
+
+The most common use case is when you display the main blob (at `file:content`), but the element supports any blob (see below the `xpath` and `blob-index` attributes).
 
 Attributes:
 * `document` (required, two-way recommended — `{{document}}`): the document whose blob will be inspected. Two-way binding is required for blob replace/clear to propagate up.
