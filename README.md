@@ -133,6 +133,10 @@ function run(input, params) {
 
 Polymer element that displays the content of a zip blob as a hierarchical, collapsible tree. Reads the entries via the `ZipUtils.EntriesListReturn` operation.
 
+When the tree is shown, a standard `<nuxeo-document-blob>` is rendered below it, giving the user the file name, size, and the usual blob actions (download, replace, clear). Visibility of the replace/clear actions follows the standard Web UI rules (write permission, immutability, retention).
+
+To let blob mutations (replace/clear) propagate back to the caller, **use two-way binding on `document`** (`{{document}}`, not `[[document]]`). When the blob changes, the element re-evaluates the mime-type guardrail and refreshes (1 server call if the new blob is still a zip).
+
 The element relies on the parent layout to keep `document.properties` up to date. It inspects the blob's `mime-type` locally before calling the server:
 * If `mime-type === "application/zip"` → fetches the entries and displays the tree (1 server call).
 * If the blob is missing → displays "No archive found at the given path." (no server call).
@@ -142,7 +146,7 @@ It is the developer's responsibility to mount the element only where it makes se
 
 ```html
 <template is="dom-if" if="[[_looksLikeZip(document)]]">
-  <nuxeo-zip-utils-display role="widget" document="[[document]]" hide-invisible></nuxeo-zip-utils-display>
+  <nuxeo-zip-utils-display role="widget" document="{{document}}" hide-invisible></nuxeo-zip-utils-display>
 </template>
 <template is="dom-if" if="[[!_looksLikeZip(document)]]">
   <nuxeo-document-viewer role="widget" document="[[document]]"></nuxeo-document-viewer>
@@ -150,11 +154,12 @@ It is the developer's responsibility to mount the element only where it makes se
 ```
 
 Attributes:
-* `document` (required): the document whose blob will be inspected
+* `document` (required, two-way recommended — `{{document}}`): the document whose blob will be inspected. Two-way binding is required for blob replace/clear to propagate up.
 * `xpath` (optional, default `file:content`): property path of the blob (or list of blobs)
 * `blob-index` (optional, default `0`): 0-based index when `xpath` resolves to a list of blobs (e.g. `files:files`); ignored for single-blob properties
 * `hide-invisible` (optional): when present, hides entries whose basename starts with `.` and entries matching the built-in OS-junk list. Per Polymer convention, just having the attribute means `true` (even `hide-invisible="false"` is `true`); omit the attribute for `false`.
 * `extra-hidden-names` (optional): comma-separated list of additional path-segment names to hide when `hide-invisible` is set. Matched case-insensitively, exact match against any segment of the entry path. Added on top of the built-in list.
+* `hide-blob-actions` (optional): when present, hides the embedded `<nuxeo-document-blob>` row (download / replace / clear actions) and shows only the file name and size in the same visual style. Per Polymer convention, just having the attribute means `true`; omit for `false`. With this attribute, one-way binding `[[document]]` is fine since there are no actions to propagate back.
 
 Built-in hidden names (when `hide-invisible` is set):
 * Anything starting with `.` (covers Mac `.DS_Store`, `.Spotlight-V100`, `.Trashes`, `.fseventsd`, `.AppleDouble`, AppleDouble forks `._*`, etc.)
@@ -167,20 +172,23 @@ Built-in hidden names (when `hide-invisible` is set):
 Examples:
 
 ```html
-<!-- Default: blob at file:content -->
-<nuxeo-zip-utils-display document="[[document]]"></nuxeo-zip-utils-display>
+<!-- Default: blob at file:content (two-way binding for blob actions) -->
+<nuxeo-zip-utils-display document="{{document}}"></nuxeo-zip-utils-display>
 
 <!-- Custom xpath, hide OS junk -->
-<nuxeo-zip-utils-display document="[[document]]"
+<nuxeo-zip-utils-display document="{{document}}"
     xpath="blah:blih" hide-invisible></nuxeo-zip-utils-display>
 
 <!-- List of blobs (e.g. files:files), pick the 4th (index 3) -->
-<nuxeo-zip-utils-display document="[[document]]"
+<nuxeo-zip-utils-display document="{{document}}"
     xpath="files:files" blob-index="3"></nuxeo-zip-utils-display>
 
 <!-- Hide built-in junk plus a few extra names -->
-<nuxeo-zip-utils-display document="[[document]]" hide-invisible
+<nuxeo-zip-utils-display document="{{document}}" hide-invisible
     extra-hidden-names="readme.txt,_metadata"></nuxeo-zip-utils-display>
+
+<!-- Tree + name/size only, no blob actions -->
+<nuxeo-zip-utils-display document="[[document]]" hide-blob-actions></nuxeo-zip-utils-display>
 ```
 
 
@@ -213,11 +221,6 @@ This plugin is available as a package on the [Nuxeo Marketplace](https://connect
 ```bash
 nuxeoctl mp-install nuxeo-zip-utils
 ```
-
-
-## TODO
-
-* Display a `<nuxeo-document-blob>` element below `<nuxeo-zip-utils-display>` so users can see the blob size, download/replace the current blob, etc.
 
 
 ## Support

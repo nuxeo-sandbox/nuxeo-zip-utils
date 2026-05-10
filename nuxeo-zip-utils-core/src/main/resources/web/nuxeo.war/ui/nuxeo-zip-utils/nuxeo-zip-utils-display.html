@@ -160,6 +160,33 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         color: var(--nuxeo-warn-text, #d32f2f);
         font-style: normal;
       }
+
+      nuxeo-document-blob {
+        margin-top: 12px;
+      }
+
+      .blob-info-row {
+        display: flex;
+        align-items: center;
+        margin-top: 12px;
+      }
+
+      .blob-info-row .info {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .blob-info-row .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .blob-info-row .detail {
+        opacity: 0.7;
+      }
     </style>
 
     <nuxeo-operation id="entriesOp" op="ZipUtils.EntriesListReturn"></nuxeo-operation>
@@ -214,6 +241,21 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
           </template>
         </div>
       </template>
+
+      <template is="dom-if" if="[[!hideBlobActions]]">
+        <nuxeo-document-blob document="{{document}}"
+                             xpath="[[_blobXpath(xpath, blobIndex)]]">
+        </nuxeo-document-blob>
+      </template>
+
+      <template is="dom-if" if="[[hideBlobActions]]">
+        <div class="blob-info-row">
+          <div class="info">
+            <div class="name">[[_blobName(document, xpath, blobIndex)]]</div>
+            <div class="detail">[[_blobSizeLabel(document, xpath, blobIndex)]]</div>
+          </div>
+        </div>
+      </template>
     </template>
   </template>
 
@@ -221,12 +263,18 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
     Polymer({
       is: 'nuxeo-zip-utils-display',
 
-      behaviors: [Nuxeo.I18nBehavior],
+      behaviors: [Nuxeo.I18nBehavior, Nuxeo.FormatBehavior],
 
       properties: {
-        /** Document whose blob will be inspected. */
+        /**
+         * Document whose blob will be inspected.
+         * `notify: true` so that mutations performed by the embedded
+         * `<nuxeo-document-blob>` (replace/clear actions) propagate up to
+         * the caller via two-way binding (caller must use `{{document}}`).
+         */
         document: {
-          type: Object
+          type: Object,
+          notify: true
         },
 
         /** Property path of the blob (or list of blobs). */
@@ -265,6 +313,18 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
           type: String,
           value: '',
           observer: '_recomputeVisible'
+        },
+
+        /**
+         * When present, the embedded `<nuxeo-document-blob>` (download /
+         * replace / clear actions) is hidden, and the file name + size are
+         * shown in a plain row instead. Per Polymer convention, just having
+         * the attribute means true (even `hide-blob-actions="false"` is
+         * true). Omit the attribute for false.
+         */
+        hideBlobActions: {
+          type: Boolean,
+          value: false
         },
 
         /** All tree nodes in display order, regardless of expand state or filter. */
@@ -592,6 +652,47 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
 
       _lineClass: function(isFolder) {
         return isFolder ? 'tree-line folder' : 'tree-line file';
+      },
+
+      // Build the xpath to pass to <nuxeo-document-blob>. Mirrors the canonical
+      // pattern from Web UI's nuxeo-document-attachments._computeBlobXpath.
+      // For a single-blob xpath, returns it unchanged. For a list-of-blobs
+      // xpath, appends `/<index>` (or `/<index>/file` for the legacy
+      // `files:files` schema where each entry is { file, filename }).
+      _blobXpath: function(xpath, idx) {
+        if (idx == null || idx < 0) {
+          return xpath;
+        }
+        var prop = (this.document && this.document.properties) ? this.document.properties[xpath] : null;
+        if (!Array.isArray(prop)) {
+          return xpath;
+        }
+        if (xpath === 'files:files') {
+          return 'files:files/' + idx + '/file';
+        }
+        return xpath + '/' + idx;
+      },
+
+      // Resolve the blob object from document.properties (single or indexed).
+      _resolveBlob: function(doc, xpath, idx) {
+        if (!doc || !doc.properties) return null;
+        var prop = doc.properties[xpath];
+        if (Array.isArray(prop)) {
+          var i = (idx == null) ? 0 : idx;
+          return (i >= 0 && i < prop.length) ? prop[i] : null;
+        }
+        return prop || null;
+      },
+
+      _blobName: function(doc, xpath, idx) {
+        var b = this._resolveBlob(doc, xpath, idx);
+        return b ? (b.name || '') : '';
+      },
+
+      _blobSizeLabel: function(doc, xpath, idx) {
+        var b = this._resolveBlob(doc, xpath, idx);
+        if (!b || b.length == null) return '';
+        return this.formatSize(b.length);
       }
     });
 
