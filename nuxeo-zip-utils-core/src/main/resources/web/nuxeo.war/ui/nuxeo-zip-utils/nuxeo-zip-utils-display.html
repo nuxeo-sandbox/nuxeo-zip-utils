@@ -616,7 +616,7 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         this._recomputeVisible();
       },
 
-      _expandAll: function() {
+      _expandAll: function(e) {
         var expanded = {};
         this._allLines.forEach(function(l) {
           if (l.isFolder) {
@@ -625,9 +625,13 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         });
         this._expanded = expanded;
         this._recomputeVisible();
+        // Drop focus so the button doesn't keep its focus ring after a mouse click.
+        if (e && e.currentTarget && e.currentTarget.blur) {
+          e.currentTarget.blur();
+        }
       },
 
-      _collapseAll: function() {
+      _collapseAll: function(e) {
         var expanded = {};
         this._allLines.forEach(function(l) {
           if (l.isFolder) {
@@ -636,6 +640,10 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         });
         this._expanded = expanded;
         this._recomputeVisible();
+        // Drop focus so the button doesn't keep its focus ring after a mouse click.
+        if (e && e.currentTarget && e.currentTarget.blur) {
+          e.currentTarget.blur();
+        }
       },
 
       _indent: function(depth) {
