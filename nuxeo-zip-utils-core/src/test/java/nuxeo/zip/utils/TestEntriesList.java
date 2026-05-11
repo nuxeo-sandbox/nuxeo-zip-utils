@@ -29,6 +29,7 @@ import nuxeo.zip.utils.operations.EntriesList;
 @Features(AutomationFeature.class)
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 @Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core")
+@Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestEntriesList {
 
     public static final String VALID_ZIP = "valid-zip.zip";

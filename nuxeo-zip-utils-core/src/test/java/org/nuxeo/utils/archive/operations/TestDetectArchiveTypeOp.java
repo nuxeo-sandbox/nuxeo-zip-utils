@@ -36,6 +36,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
         "org.nuxeo.ecm.platform.commandline.executor",
         "org.nuxeo.ecm.platform.rendition.core",
         "nuxeo.zip.utils.nuxeo-zip-utils-core" })
+@Deploy("nuxeo.zip.utils.nuxeo-zip-utils-core:disable-listeners-contrib.xml")
 public class TestDetectArchiveTypeOp {
 
     protected static final String TEST_ARCHIVES = "TestArchives/";

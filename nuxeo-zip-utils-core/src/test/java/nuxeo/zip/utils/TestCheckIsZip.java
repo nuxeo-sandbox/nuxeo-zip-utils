@@ -33,6 +33,7 @@ import nuxeo.zip.utils.operations.CheckIsZip;
 @RepositoryConfig(init = DefaultRepositoryInit.class, cleanup = Granularity.METHOD)
 @Deploy({ "org.nuxeo.ecm.platform.thumbnail",
         "org.nuxeo.ecm.platform.picture.core",
+        "org.nuxeo.ecm.platform.video",
         "org.nuxeo.ecm.platform.tag",
         "org.nuxeo.ecm.platform.commandline.executor",
         "org.nuxeo.ecm.platform.rendition.core" })
