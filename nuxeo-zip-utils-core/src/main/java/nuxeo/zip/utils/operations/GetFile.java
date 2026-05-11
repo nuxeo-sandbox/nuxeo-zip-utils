@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Contributors:
- *     Thibaud Arguillere
+ *     Thibaud Arguillere (With the help of OpenCode / Claude Opus)
  */
 package nuxeo.zip.utils.operations;
 
