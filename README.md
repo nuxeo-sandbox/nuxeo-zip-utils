@@ -155,6 +155,42 @@ It is the developer's responsibility to mount the element only where it makes se
 
 The most common use case is when you display the main blob (at `file:content`), but the element supports any blob (see below the `xpath` and `blob-index` attributes).
 
+`_looksLikeZip` is up to you to implement on the parent layout — its shape depends on which blob you target. A few examples:
+
+Main blob at `file:content`:
+
+```javascript
+_looksLikeZip(doc) {
+  return doc
+      && doc.properties
+      && doc.properties['file:content']
+      && doc.properties['file:content']['mime-type'] === 'application/zip';
+}
+```
+
+2nd blob in `files:files` (legacy schema — list items wrap the blob in a `file` field):
+
+```javascript
+_looksLikeZip(doc) {
+  if (doc && doc.properties && doc.properties['files:files'] && doc.properties['files:files'][1]) {
+    return doc.properties['files:files'][1].file
+        && doc.properties['files:files'][1].file['mime-type'] === 'application/zip';
+  }
+  return false;
+}
+```
+
+3rd blob in a custom blob-list field at `morefiles:blobs` (modern schema — list items are blobs directly):
+
+```javascript
+_looksLikeZip(doc) {
+  if (doc && doc.properties && doc.properties['morefiles:blobs'] && doc.properties['morefiles:blobs'][2]) {
+    return doc.properties['morefiles:blobs'][2]['mime-type'] === 'application/zip';
+  }
+  return false;
+}
+```
+
 Attributes:
 * `document` (required, two-way recommended — `{{document}}`): the document whose blob will be inspected. Two-way binding is required for blob replace/clear to propagate up.
 * `xpath` (optional, default `file:content`): property path of the blob (or list of blobs)
