@@ -3,6 +3,7 @@ package nuxeo.zip.utils.operations;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import org.nuxeo.common.utils.ZipUtils;
 import org.nuxeo.ecm.automation.core.Constants;
@@ -58,13 +59,26 @@ public class EntriesListReturn {
             return (Blob) value;
         }
         if (value instanceof List) {
-            List<Blob> blobs = (List<Blob>) value;
+            List<?> items = (List<?>) value;
             int idx = blobIndex == null ? 0 : blobIndex.intValue();
-            if (idx < 0 || idx >= blobs.size()) {
+            if (idx < 0 || idx >= items.size()) {
                 throw new NuxeoException("blobIndex " + idx + " is out of range for property '" + xpath
-                        + "' (size " + blobs.size() + ")");
+                        + "' (size " + items.size() + ")");
             }
-            return blobs.get(idx);
+            Object item = items.get(idx);
+            if (item instanceof Blob) {
+                return (Blob) item;
+            }
+            // Complex-list schema (e.g. files:files where item is { file: <Blob>, filename: ... }).
+            // Find the first Blob-valued field in the map.
+            if (item instanceof Map) {
+                for (Object v : ((Map<String, Object>) item).values()) {
+                    if (v instanceof Blob) {
+                        return (Blob) v;
+                    }
+                }
+            }
+            throw new NuxeoException("Item at '" + xpath + "/" + idx + "' does not contain a Blob");
         }
         throw new NuxeoException("Property '" + xpath + "' is neither a Blob nor a list of Blobs");
     }
