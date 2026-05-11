@@ -1,3 +1,21 @@
+/*
+ * (C) Copyright 2026 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Thibaud Arguillere
+ */
 package nuxeo.zip.utils.operations;
 
 import java.io.IOException;
@@ -14,9 +32,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 
 import nuxeo.zip.utils.ZipFolderish;
 
-/**
- *
- */
+/** Zips the content of a Folderish document and its descendants, returning the zip blob. */
 @Operation(id = ZipFolderishOp.ID, category = Constants.CAT_BLOB, label = "ZipUtils: Zip Folderish", description = "Zip the content of a input Folderish document, "
         + " returns the zipped blob."
         + " By default, it uses file:content. This can be overriden by passing the ID of a chain/operation in callbackChain (the chain receives a Document, must return a blob)"
@@ -45,18 +61,12 @@ public class ZipFolderishOp {
 
     @OperationMethod
     public Blob run(DocumentModel input) throws IOException {
-
         if (input == null || !input.isFolder()) {
             return null;
         }
-
-        ZipFolderish zipFolderish = new ZipFolderish(input);
+        var zipFolderish = new ZipFolderish(input);
         zipFolderish.setGetBlolbCallbackChain(callbackChain);
         zipFolderish.setGetCchildrenWhereClause(whereClauseOverride);
-
-        Blob result = zipFolderish.run(doNotCreateMainFolder == null ? false : doNotCreateMainFolder);
-
-        return result;
+        return zipFolderish.run(doNotCreateMainFolder == null ? false : doNotCreateMainFolder);
     }
-
 }

@@ -1,8 +1,25 @@
+/*
+ * (C) Copyright 2026 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Thibaud Arguillere
+ */
 package nuxeo.zip.utils.operations;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -17,10 +34,8 @@ import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.platform.mimetype.interfaces.MimetypeRegistry;
 
-/**
- *
- */
-@Operation(id=GetFile.ID, category=Constants.CAT_BLOB, label="ZipUtils: Get File", description="Given the name (path) of an entry in the zip, "
+/** Returns a single file (entry) from a zip blob, identified by its full path inside the archive. */
+@Operation(id = GetFile.ID, category = Constants.CAT_BLOB, label = "ZipUtils: Get File", description = "Given the name (path) of an entry in the zip, "
         + "returns the corresponding file. Return null if the entry does not exist or is a folder."
         + " Assumes the input blob is a valid zip file."
         + " If input is a document, xpath can be used (default is file:content)")
@@ -42,44 +57,35 @@ public class GetFile {
 
     @OperationMethod
     public Blob run(DocumentModel input) throws IOException {
-
-        Blob blob = (Blob) input.getPropertyValue(xpath);
-
+        var blob = (Blob) input.getPropertyValue(xpath);
         return getFile(blob);
     }
 
     @OperationMethod
     public Blob run(Blob input) throws IOException {
-
         return getFile(input);
     }
 
     protected Blob getFile(Blob input) throws IOException {
-
-        Blob result = null;
-
-        if (input != null) {
-            try (InputStream blobStream = input.getStream()) {
-                try(ZipInputStream zipStream = new ZipInputStream(blobStream)) {
-                    ZipEntry entry = zipStream.getNextEntry();
-                    while (entry != null) {
-                        if (!entry.isDirectory() && entry.getName().equals(entryName)) {
-                            result = Blobs.createBlob(zipStream);
-                            if(result != null) {
-                                String fileName = StringUtils.substringAfterLast(entryName, "/");
-                                result.setFilename(fileName);
-
-                                String mimeType = mimeTypeService.getMimetypeFromFilename(fileName);
-                                result.setMimeType(mimeType);
-                            }
-                            break;
-                        }
-                        entry = zipStream.getNextEntry();
+        if (input == null) {
+            return null;
+        }
+        try (InputStream blobStream = input.getStream();
+                ZipInputStream zipStream = new ZipInputStream(blobStream)) {
+            var entry = zipStream.getNextEntry();
+            while (entry != null) {
+                if (!entry.isDirectory() && entry.getName().equals(entryName)) {
+                    var result = Blobs.createBlob(zipStream);
+                    if (result != null) {
+                        var fileName = StringUtils.substringAfterLast(entryName, "/");
+                        result.setFilename(fileName);
+                        result.setMimeType(mimeTypeService.getMimetypeFromFilename(fileName));
                     }
+                    return result;
                 }
+                entry = zipStream.getNextEntry();
             }
         }
-
-        return result;
+        return null;
     }
 }

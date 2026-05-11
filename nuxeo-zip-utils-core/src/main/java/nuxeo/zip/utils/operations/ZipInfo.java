@@ -1,10 +1,27 @@
+/*
+ * (C) Copyright 2026 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Thibaud Arguillere
+ */
 package nuxeo.zip.utils.operations;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
 import org.nuxeo.ecm.automation.OperationContext;
 import org.nuxeo.ecm.automation.core.Constants;
 import org.nuxeo.ecm.automation.core.annotations.Context;
@@ -14,9 +31,7 @@ import org.nuxeo.ecm.automation.core.annotations.Param;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.DocumentModel;
 
-/**
- *
- */
+/** Sets {@code zipInfo_countFiles}, {@code zipInfo_countDirectories} and {@code zipInfo_comment} context variables. */
 @Operation(id = ZipInfo.ID, category = Constants.CAT_BLOB, label = "ZipUtils: Zip Info", description = "Return info about the zip in Context Variables: "
         + " zipInfo_countFiles, zipInfo_countDirectories, and zipInfo_comment."
         + " If the input is a document, use xpath for the blob to use (default is file:content)."
@@ -39,26 +54,18 @@ public class ZipInfo {
 
     @OperationMethod
     public DocumentModel run(DocumentModel input) throws IOException {
-
-        Blob blob = (Blob) input.getPropertyValue(xpath);
-
+        var blob = (Blob) input.getPropertyValue(xpath);
         getZipInto(blob);
-
         return input;
-
     }
 
     @OperationMethod
     public Blob run(Blob input) throws IOException {
-
         getZipInto(input);
-
         return input;
-
     }
 
     protected void getZipInto(Blob input) throws IOException {
-
         int countFiles = 0;
         int countDirectories = 0;
 
@@ -68,12 +75,12 @@ public class ZipInfo {
 
         if (input != null) {
             File zipBlobFile = input.getFile();
-            try (ZipFile zipFile = new ZipFile(zipBlobFile)) {
+            try (var zipFile = new ZipFile(zipBlobFile)) {
                 ctx.put(CTX_VAR_COMMENT, zipFile.getComment() == null ? "" : zipFile.getComment());
-                Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                var entries = zipFile.entries();
                 while (entries.hasMoreElements()) {
-                    ZipEntry entry = entries.nextElement();
-                    if(entry.isDirectory()) {
+                    var entry = entries.nextElement();
+                    if (entry.isDirectory()) {
                         countDirectories += 1;
                     } else {
                         countFiles += 1;
@@ -83,6 +90,5 @@ public class ZipInfo {
         }
         ctx.put(CTX_VAR_COUNT_FILES, countFiles);
         ctx.put(CTX_VAR_COUNT_DIRECTORIES, countDirectories);
-
     }
 }

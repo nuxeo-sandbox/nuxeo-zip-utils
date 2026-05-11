@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2018-2026 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * Contributors:
- *     Thibaud ARguillere
+ *     Thibaud Arguillere
  */
 package nuxeo.zip.utils;
 
@@ -84,15 +84,16 @@ public class ZipFolderish {
     // Added with an AND after SELECT * FROM Document WHERE ecm:parentId = 'id of parent'
     protected String getChildrenWhereClause = DEFAULT_NXQL_WHERE_FOR_GET_CHILDREN;
 
-    // This is what makes this class not able to process big folders. This map store the title of documents and their
-    // paths in the zip. When adding a new element, we test if the path already existt and if yes, we must change the
-    // title used in the zip.
-    // Checlkin i the entry exist in the zip would have the same impact in memory, unless building somethign slow that
-    // uses the zip stream to loop and check all entries.
-    protected List<String> pathsInZip = new ArrayList<String>();
+    /*
+     * This is what makes this class not able to process big folders. This map stores the title of documents and their
+     * paths in the zip. When adding a new element, we test if the path already exists and if yes, we must change the
+     * title used in the zip.
+     * Checking if the entry exists in the zip would have the same impact in memory, unless building something slow that
+     * uses the zip stream to loop and check all entries.
+     */
+    protected List<String> pathsInZip = new ArrayList<>();
 
     public ZipFolderish(DocumentModel docToZip) {
-
         mainDocument = docToZip;
         coreSession = mainDocument.getCoreSession();
     }
@@ -129,7 +130,6 @@ public class ZipFolderish {
      * <p>
      * When <code>doNotCreateMainFolder</code> is true, the first level in the zip archive is let empty, hiearchy starts
      * whith children directly.
-     * <p>
      *
      * @param doNotCreateMainFolder
      * @return the zipped content
@@ -137,66 +137,45 @@ public class ZipFolderish {
      * @since 10.2
      */
     public Blob run(boolean doNotCreateMainFolder) throws IOException {
-
-        if(!mainDocument.isFolder()) {
+        if (!mainDocument.isFolder()) {
             return null;
         }
 
         Blob finalZip = Blobs.createBlobWithExtension(".zip");
-
         finalZip.setFilename(mainDocument.getTitle() + ".zip");
         finalZip.setMimeType("application/zip");
 
         File finalZipFile = finalZip.getFile();
 
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(finalZipFile))) {
-
-            String currentPath;
-
-            currentPath = "";
-            if (!doNotCreateMainFolder) {
-                currentPath = mainDocument.getTitle() + "/";
-            }
-
+            String currentPath = doNotCreateMainFolder ? "" : mainDocument.getTitle() + "/";
             if (!currentPath.isEmpty()) {
                 ZipUtils._putDirectoryEntry(currentPath, zipOut);
             }
-
             processFolderish(mainDocument, zipOut, currentPath);
-
         }
 
         return finalZip;
-
     }
 
     protected void processFolderish(DocumentModel folderishDoc, ZipOutputStream zipOut, String currentPath)
             throws IOException {
 
-        String nxql;
-        String docTitle;
-        String uuid;
-        Blob blob;
-        String pathInZip;
         int countForAvoidDuplicates = 1;
-        DocumentModel folderish;
-        DocumentModel doc;
 
         if (!currentPath.endsWith("/")) {
             currentPath += "/";
         }
 
-        // ==============================================
-        // Process folderish children
-        // ==============================================
-        nxql = "SELECT ecm:uuid, dc:title FROM Document WHERE ecm:parentId = '" + folderishDoc.getId() + "'";
-        nxql += " AND ecm:mixinType = 'Folderish'";
-        nxql += " AND " + getChildrenWhereClause;
+        /* ==================== Process folderish children ==================== */
+        var nxql = "SELECT ecm:uuid, dc:title FROM Document WHERE ecm:parentId = '" + folderishDoc.getId() + "'"
+                + " AND ecm:mixinType = 'Folderish'"
+                + " AND " + getChildrenWhereClause;
 
         try (IterableQueryResult result = coreSession.queryAndFetch(nxql, NXQL.NXQL)) {
             for (Map<String, Serializable> map : result) {
-                docTitle = (String) map.get("dc:title");
-                pathInZip = currentPath + docTitle + "/";
+                var docTitle = (String) map.get("dc:title");
+                var pathInZip = currentPath + docTitle + "/";
                 if (pathsInZip.contains(pathInZip)) {
                     countForAvoidDuplicates += 1;
                     docTitle += "-" + countForAvoidDuplicates;
@@ -210,43 +189,36 @@ public class ZipFolderish {
                 pathInZip += "/";
 
                 // Recursive call
-                // TODO: Do not fetch the folder, use the UID as a parameter in the function, like:
-                // processFolderish((String) map.get("ecm:uuid"), , zipOut, pathInZip);
-                uuid = (String) map.get("ecm:uuid");
-                folderish = coreSession.getDocument(new IdRef(uuid));
+                // TODO: Do not fetch the folder, use the UID as a parameter in the function
+                var uuid = (String) map.get("ecm:uuid");
+                var folderish = coreSession.getDocument(new IdRef(uuid));
                 processFolderish(folderish, zipOut, pathInZip);
             }
         }
 
-        // ==============================================
-        // Process non-folderish children
-        // ==============================================
-        // OPtimizaiton dea: do not get UID when there is no callback chain
-        // Looks like we can't get file:clontent using queryAndFetch...
-        // So, let's just get uid and fecth each doc then.
-        // TODO: certaing room for optimization here...
-        // nxql = "SELECT ecm:uuid, file:content FROM Document WHERE ecm:parentId = '" + folderishDoc.getId() + "'";
-        nxql = "SELECT ecm:uuid FROM Document WHERE ecm:parentId = '" + folderishDoc.getId() + "'";
-        nxql += " AND ecm:mixinType != 'Folderish'";
-        nxql += " AND " + getChildrenWhereClause;
+        /* ==================== Process non-folderish children ==================== */
+        // Optimization idea: do not get UID when there is no callback chain.
+        // queryAndFetch cannot return file:content, so we fetch the doc by UID below.
+        nxql = "SELECT ecm:uuid FROM Document WHERE ecm:parentId = '" + folderishDoc.getId() + "'"
+                + " AND ecm:mixinType != 'Folderish'"
+                + " AND " + getChildrenWhereClause;
 
         try (IterableQueryResult result = coreSession.queryAndFetch(nxql, NXQL.NXQL)) {
             for (Map<String, Serializable> map : result) {
-
-                uuid = (String) map.get("ecm:uuid");
-                doc = coreSession.getDocument(new IdRef(uuid));
-                blob = getDocumentBlob(doc);
+                var uuid = (String) map.get("ecm:uuid");
+                var doc = coreSession.getDocument(new IdRef(uuid));
+                var blob = getDocumentBlob(doc);
                 // It is ok to have a null blob
                 if (blob == null) {
                     continue;
                 }
 
-                docTitle = blob.getFilename();
-                pathInZip = currentPath + docTitle;
+                var docTitle = blob.getFilename();
+                var pathInZip = currentPath + docTitle;
                 if (pathsInZip.contains(pathInZip)) {
                     countForAvoidDuplicates += 1;
-                    String baseName = FilenameUtils.getBaseName(docTitle);
-                    String ext = FilenameUtils.getExtension(docTitle);
+                    var baseName = FilenameUtils.getBaseName(docTitle);
+                    var ext = FilenameUtils.getExtension(docTitle);
                     docTitle = baseName + "-" + countForAvoidDuplicates + "." + ext;
                     pathInZip = currentPath + docTitle;
                 }
@@ -255,44 +227,29 @@ public class ZipFolderish {
                 ZipUtils._putFileEntry(blob.getFile(), pathInZip, zipOut);
             }
         }
-
     }
 
     protected Blob getDocumentBlob(DocumentModel doc) {
-
-        Blob result = null;
-
         if (StringUtils.isBlank(getBlobCallbackChain)) {
-            if (doc.hasSchema("file")) {
-                result = (Blob) doc.getPropertyValue("file:content");
-            }
-        } else {
-            result = getBlobFromCallbackChain(doc);
+            return doc.hasSchema("file") ? (Blob) doc.getPropertyValue("file:content") : null;
         }
-
-        return result;
-
+        return getBlobFromCallbackChain(doc);
     }
 
     protected Blob getBlobFromCallbackChain(DocumentModel doc) throws NuxeoException {
+        var as = Framework.getService(AutomationService.class);
 
-        Blob result = null;
-
-        AutomationService as = Framework.getService(AutomationService.class);
-
-        OperationContext ctx = new OperationContext();
+        var ctx = new OperationContext();
         ctx.setInput(doc);
         ctx.setCoreSession(coreSession);
-        OperationChain chain = new OperationChain("ZipFolder_GetBlob_Callback");
+        var chain = new OperationChain("ZipFolder_GetBlob_Callback");
         chain.add(getBlobCallbackChain);
 
         try {
-            result = (Blob) as.run(ctx, chain);
+            return (Blob) as.run(ctx, chain);
         } catch (OperationException e) {
             throw new NuxeoException("Failed to run the getBlobCallbackChain " + getBlobCallbackChain, e);
         }
-
-        return result;
     }
 
     /**
@@ -303,9 +260,7 @@ public class ZipFolderish {
      * @since 10.2
      */
     public void setGetBlolbCallbackChain(String chainId) {
-
         getBlobCallbackChain = StringUtils.isBlank(chainId) ? null : chainId;
-
     }
 
     /**
@@ -318,9 +273,6 @@ public class ZipFolderish {
      * @since 10.2
      */
     public void setGetCchildrenWhereClause(String nxql) {
-
         getChildrenWhereClause = StringUtils.isBlank(nxql) ? DEFAULT_NXQL_WHERE_FOR_GET_CHILDREN : nxql;
-
     }
-
 }

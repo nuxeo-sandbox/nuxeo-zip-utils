@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 Nuxeo SA (http://nuxeo.com/) and others.
+ * (C) Copyright 2018-2026 Nuxeo SA (http://nuxeo.com/) and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,6 @@
  */
 package nuxeo.zip.utils;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.nuxeo.ecm.core.api.*;
-import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
-import org.nuxeo.ecm.platform.filemanager.api.FileImporterContext;
-import org.nuxeo.ecm.platform.filemanager.api.FileManager;
-import org.nuxeo.runtime.api.Framework;
-import org.nuxeo.runtime.transaction.TransactionHelper;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,12 +28,28 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.nuxeo.ecm.core.api.Blob;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.NuxeoException;
+import org.nuxeo.ecm.core.api.PathRef;
+import org.nuxeo.ecm.core.api.impl.blob.FileBlob;
+import org.nuxeo.ecm.platform.filemanager.api.FileImporterContext;
+import org.nuxeo.ecm.platform.filemanager.api.FileManager;
+import org.nuxeo.runtime.api.Framework;
+import org.nuxeo.runtime.transaction.TransactionHelper;
+
 /**
  * @since 10.2
  */
 public class UnzipToDocuments {
 
-    protected static Log logger = LogFactory.getLog(UnzipToDocuments.class);
+    private static final Logger log = LogManager.getLogger(UnzipToDocuments.class);
 
     public static String DEFAULT_FOLDERISH_TYPE = "Folder";
 
@@ -107,8 +112,8 @@ public class UnzipToDocuments {
             File zipBlobFile = zipBlob.getFile();
             zipFile = new ZipFile(zipBlobFile);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            
-            logger.info("UnzipToDocuments, starting, for blob " + zipFile.getName());
+
+            log.info("UnzipToDocuments, starting, for blob {}", zipFile.getName());
 
             DocumentModel parentForImport;
 
@@ -131,8 +136,8 @@ public class UnzipToDocuments {
                 if (shouldIgnoreEntry(entryPath)) {
                     continue;
                 }
-                
-                logger.info("    Handling entry: " + entryPath);
+
+                log.info("    Handling entry: {}", entryPath);
 
                 Boolean isDirectory = entry.isDirectory();
 
@@ -152,14 +157,14 @@ public class UnzipToDocuments {
                     if (!newFile.getParentFile().exists()) {
                         newFile.getParentFile().mkdirs();
                     }
-                    FileOutputStream fos = new FileOutputStream(newFile);
-                    InputStream zipEntryStream = zipFile.getInputStream(entry);
-                    int len;
-                    byte[] buffer = new byte[4096];
-                    while ((len = zipEntryStream.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
+                    try (FileOutputStream fos = new FileOutputStream(newFile);
+                            InputStream zipEntryStream = zipFile.getInputStream(entry)) {
+                        int len;
+                        byte[] buffer = new byte[4096];
+                        while ((len = zipEntryStream.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
                     }
-                    fos.close();
 
                     if (parentForNewBlob != null) {
                         // Import
@@ -184,11 +189,14 @@ public class UnzipToDocuments {
         } catch (IOException e) {
             throw new NuxeoException("Error while unzipping and creating Documents", e);
         } finally {
-            org.apache.commons.io.FileUtils.deleteQuietly(tempFolderFile);
-            try {
-                zipFile.close();
-            } catch (IOException e) {
-                // Ignore;
+            FileUtils.deleteQuietly(tempFolderFile);
+            if (zipFile != null) {
+                try {
+                    zipFile.close();
+                } catch (IOException e) {
+                    // Best-effort close in finally; surface the failure in logs but do not mask the primary exception.
+                    log.warn("Failed to close zip file", e);
+                }
             }
 
             TransactionHelper.commitOrRollbackTransaction();
@@ -200,11 +208,6 @@ public class UnzipToDocuments {
 
     /**
      * Given a path from the zip file, make sure there are folderish documents in Nuxeo for each folder.
-     *
-     * @param session
-     * @param entryPath
-     * @param isDirectory
-     * @return
      */
     private DocumentModel handleFolders(CoreSession session, DocumentModel parentForImport, String entryPath,
             Boolean isDirectory) {
@@ -215,20 +218,15 @@ public class UnzipToDocuments {
         String[] pathParts = entryPath.split("/");
 
         int limit;
-        if (isDirectory)
+        if (isDirectory) {
             limit = pathParts.length;
-        else
+        } else {
             limit = pathParts.length - 1;
+        }
 
         for (int i = 0; i < limit; i++) {
 
-            String docType;
-
-            if (i == 0) {
-                docType = rootFolderishType;
-            } else {
-                docType = childFolderishType;
-            }
+            String docType = (i == 0) ? rootFolderishType : childFolderishType;
 
             repoPathToCurrentDoc += "/" + pathParts[i];
 
@@ -258,12 +256,8 @@ public class UnzipToDocuments {
      * Check if the entry should be ignored. Either because not relevant (__MACOSX, ...) or dangerous ("../")
      */
     protected boolean shouldIgnoreEntry(String fileName) {
-        if (fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
-                || fileName.endsWith(".DS_Store")) {
-            return true;
-        }
-
-        return false;
+        return fileName.startsWith("__MACOSX/") || fileName.startsWith(".") || fileName.contains("../")
+                || fileName.endsWith(".DS_Store");
     }
 
     public void setChildFolderishType(String childFolderishType) {
