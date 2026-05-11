@@ -396,14 +396,7 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
 
         // Local guardrail: rely on the parent layout keeping document.properties
         // in sync. Only call the server when we know the blob is a zip.
-        var prop = (this.document.properties || {})[this.xpath];
-        var blob;
-        if (Array.isArray(prop)) {
-          var idx = this.blobIndex == null ? 0 : this.blobIndex;
-          blob = (idx >= 0 && idx < prop.length) ? prop[idx] : null;
-        } else {
-          blob = prop;
-        }
+        var blob = this._resolveBlob(this.document, this.xpath, this.blobIndex);
         if (!blob) {
           this._loading = false;
           this._showNoBlob = true;
@@ -687,7 +680,11 @@ Even `hide-invisible="false"` resolves to `true`. To get `false`, omit the attri
         var prop = doc.properties[xpath];
         if (Array.isArray(prop)) {
           var i = (idx == null) ? 0 : idx;
-          return (i >= 0 && i < prop.length) ? prop[i] : null;
+          var entry = (i >= 0 && i < prop.length) ? prop[i] : null;
+          if (!entry) return null;
+          // Legacy files:files schema wraps the blob in { file: <blob>, ... }
+          if (xpath === 'files:files') return entry.file || null;
+          return entry;
         }
         return prop || null;
       },
