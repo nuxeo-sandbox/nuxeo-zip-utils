@@ -1,3 +1,21 @@
+/*
+ * (C) Copyright 2026 Nuxeo (http://nuxeo.com/) and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Contributors:
+ *     Thibaud Arguillere
+ */
 package nuxeo.zip.utils.operations;
 
 import java.io.IOException;
@@ -49,38 +67,36 @@ public class EntriesListReturn {
         return toBlob(input);
     }
 
-    @SuppressWarnings("unchecked")
     protected Blob resolveBlob(DocumentModel input) {
         Object value = input.getPropertyValue(xpath);
         if (value == null) {
             return null;
         }
-        if (value instanceof Blob) {
-            return (Blob) value;
+        if (value instanceof Blob blob) {
+            return blob;
         }
-        if (value instanceof List) {
-            List<?> items = (List<?>) value;
+        if (value instanceof List<?> items) {
             int idx = blobIndex == null ? 0 : blobIndex.intValue();
             if (idx < 0 || idx >= items.size()) {
-                throw new NuxeoException("blobIndex " + idx + " is out of range for property '" + xpath
-                        + "' (size " + items.size() + ")");
+                throw new NuxeoException("blobIndex %d is out of range for property '%s' (size %d)"
+                        .formatted(idx, xpath, items.size()));
             }
-            Object item = items.get(idx);
-            if (item instanceof Blob) {
-                return (Blob) item;
+            var item = items.get(idx);
+            if (item instanceof Blob blob) {
+                return blob;
             }
             // Complex-list schema (e.g. files:files where item is { file: <Blob>, filename: ... }).
             // Find the first Blob-valued field in the map.
-            if (item instanceof Map) {
-                for (Object v : ((Map<String, Object>) item).values()) {
-                    if (v instanceof Blob) {
-                        return (Blob) v;
+            if (item instanceof Map<?, ?> map) {
+                for (var v : map.values()) {
+                    if (v instanceof Blob blob) {
+                        return blob;
                     }
                 }
             }
-            throw new NuxeoException("Item at '" + xpath + "/" + idx + "' does not contain a Blob");
+            throw new NuxeoException("Item at '%s/%d' does not contain a Blob".formatted(xpath, idx));
         }
-        throw new NuxeoException("Property '" + xpath + "' is neither a Blob nor a list of Blobs");
+        throw new NuxeoException("Property '%s' is neither a Blob nor a list of Blobs".formatted(xpath));
     }
 
     protected Blob toBlob(Blob input) throws IOException {
@@ -88,10 +104,10 @@ public class EntriesListReturn {
             return null;
         }
         try (InputStream stream = input.getStream()) {
-            List<String> names = ZipUtils.getEntryNames(stream);
+            var names = ZipUtils.getEntryNames(stream);
             names.sort(null);
-            String text = String.join("\n", names);
-            Blob result = Blobs.createBlob(text, "text/plain", "UTF-8");
+            var text = String.join("\n", names);
+            var result = Blobs.createBlob(text, "text/plain", "UTF-8");
             result.setFilename("zip-entries.txt");
             return result;
         }
