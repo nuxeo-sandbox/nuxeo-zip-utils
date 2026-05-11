@@ -1,9 +1,5 @@
 # nuxeo-zip-utils
 
-> [!IMPORTANT]
-> Released version for Nuxeo LTS 2025 is 2025.1.0, available on [Nuxeo Marketplace](https://connect.nuxeo.com/nuxeo/site/marketplace/package/nuxeo-zip-utils).
-> Current version (2025.2.0-SNAPSHOT) is work in progress: Using GitHub as backup. DO not build/deploy this SNAPSHOT
-
 Utilities for dealing with archives (zip, tar, rar, etc.) and displaying the content of a .zip in Nuxeo.
 
 ## Description
