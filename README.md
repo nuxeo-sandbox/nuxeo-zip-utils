@@ -223,6 +223,12 @@ Examples:
 
 <!-- Tree + name/size only, no blob actions -->
 <nuxeo-zip-utils-display document="[[document]]" hide-blob-actions></nuxeo-zip-utils-display>
+
+```
+NB: of course, you will need to import the element where you want to use it. 
+For example in a layout :
+```html
+<link rel="import" href="../../nuxeo-zip-utils/nuxeo-zip-utils-display.html">
 ```
 
 ## Deploy / Build and Deploy
