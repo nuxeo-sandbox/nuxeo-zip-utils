@@ -225,7 +225,6 @@ Examples:
 <nuxeo-zip-utils-display document="[[document]]" hide-blob-actions></nuxeo-zip-utils-display>
 ```
 
-
 ## Deploy / Build and Deploy
 
 ### Build and Deploy Locally
