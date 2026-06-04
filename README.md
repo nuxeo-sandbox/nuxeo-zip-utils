@@ -141,12 +141,16 @@ The element relies on the parent layout to keep `document.properties` up to date
 It is the developer's responsibility to mount the element only where it makes sense. A common pattern is to wrap it in a `dom-if` and fall back to another viewer when the document does not carry a zip:
 
 ```html
+<!-- Adapt the path if needed. Here we assume we are in a document layout -->
+<link rel="import" href="../../nuxeo-zip-utils/nuxeo-zip-utils-display.html">
+. . . dom-module, style, ...
 <template is="dom-if" if="[[_looksLikeZip(document)]]">
   <nuxeo-zip-utils-display role="widget" document="{{document}}" hide-invisible></nuxeo-zip-utils-display>
 </template>
 <template is="dom-if" if="[[!_looksLikeZip(document)]]">
   <nuxeo-document-viewer role="widget" document="[[document]]"></nuxeo-document-viewer>
 </template>
+. . .
 ```
 
 The most common use case is when you display the main blob (at `file:content`), but the element supports any blob (see below the `xpath` and `blob-index` attributes).
@@ -224,12 +228,6 @@ Examples:
 <!-- Tree + name/size only, no blob actions -->
 <nuxeo-zip-utils-display document="[[document]]" hide-blob-actions></nuxeo-zip-utils-display>
 
-```
-NB: of course, you will need to import the element where you want to use it. 
-For example in a layout :
-```html
-<link rel="import" href="../../nuxeo-zip-utils/nuxeo-zip-utils-display.html">
-```
 
 ## Deploy / Build and Deploy
 
